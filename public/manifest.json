@@ -1,0 +1,21 @@
+{
+  "name": "EducHub",
+  "short_name": "EducHub",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "description": "A modern education management platform.",
+  "icons": [
+    {
+      "src": "graduation-cap-svgrepo-com.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "graduation-cap-svgrepo-com.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+} 

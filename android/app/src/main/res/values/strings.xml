@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EducHub</string>
+    <string name="title_activity_main">EducHub</string>
+    <string name="package_name">com.kzyarou.educhub</string>
+    <string name="custom_url_scheme">com.kzyarou.educhub</string>
+</resources>
