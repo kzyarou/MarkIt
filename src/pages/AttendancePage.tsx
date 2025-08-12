@@ -162,18 +162,26 @@ export default function AttendancePage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {sections.map((section) => (
-                          <Card key={section.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                            <CardContent className="p-4" onClick={() => handleSectionSelect(section)}>
-                              <h3 className="font-medium">{section.name}</h3>
-                              <p className="text-sm text-gray-600">Grade {section.gradeLevel}</p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Users className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-600">{section.students.length} students</span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                        {sections.map((section) => {
+                          const gradeNum = Number(section.gradeLevel);
+                          const isSenior = section.classification === 'senior' || gradeNum === 11 || gradeNum === 12;
+                          const isJunior = section.classification === 'junior' || [7,8,9,10].includes(gradeNum);
+                          return (
+                            <Card key={section.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                              <CardContent className="p-4" onClick={() => handleSectionSelect(section)}>
+                                <h3 className="font-medium">{section.name}</h3>
+                                <p className="text-sm text-gray-600">Grade {section.gradeLevel}</p>
+                                <div className="text-xs mt-1">
+                                  {isSenior ? '2 Semesters' : isJunior ? '4 Quarters' : ''}
+                                </div>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Users className="w-4 h-4 text-gray-400" />
+                                  <span className="text-sm text-gray-600">{section.students.length} students</span>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>

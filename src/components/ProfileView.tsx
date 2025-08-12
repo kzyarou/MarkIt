@@ -3,6 +3,9 @@ import { Mail, Hash, Phone, User, Edit2, Facebook, Calendar, BadgeCheck } from '
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 
 interface ProfileViewProps {
   profile: any;
@@ -29,6 +32,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     age: profile?.age || '',
     facebook: profile?.facebook || '',
     role: profile?.role || 'student',
+    employeeNumber: profile?.employeeNumber || '',
   });
   useEffect(() => {
     setEditProfile({
@@ -38,6 +42,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       age: profile?.age || '',
       facebook: profile?.facebook || '',
       role: profile?.role || 'student',
+      employeeNumber: profile?.employeeNumber || '',
     });
   }, [profile]);
 
@@ -66,6 +71,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       age: profile?.age || '',
       facebook: profile?.facebook || '',
       role: profile?.role || 'student',
+      employeeNumber: profile?.employeeNumber || '',
     });
   };
   const handleSave = async () => {
@@ -77,6 +83,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         age: editProfile.age ? Number(editProfile.age) : undefined,
         facebook: editProfile.facebook,
         role: editProfile.role,
+        employeeNumber: editProfile.role === 'teacher' ? editProfile.employeeNumber : undefined,
       });
       setIsEditing(false);
     }
@@ -84,126 +91,127 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   // UI
   return (
-    <div className="pt-28 pb-6 px-6 text-center w-full max-w-md text-gray-900 dark:text-white">
-      {editable && !isEditing && (
-        <button
-          onClick={handleEdit}
-          className="absolute right-6 top-6 z-30 p-2 rounded-full shadow-lg bg-white dark:bg-gray-900 hover:bg-blue-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors"
-          aria-label="Edit Profile"
-        >
-          <Edit2 className="w-5 h-5 text-blue-600" />
-        </button>
-      )}
-      {editable && isEditing ? (
-        <>
-          {/* Profile Type Selector - now read-only */}
-          <div className="flex justify-center gap-4 mb-4">
-            <button
-              className={`px-4 py-2 rounded-full font-semibold border transition-colors ${editProfile.role === 'teacher' ? 'bg-blue-500 text-white border-blue-700' : 'bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-gray-700'} cursor-not-allowed opacity-60`}
-              type="button"
-              disabled
-            >
-              Teacher
-            </button>
-            <button
-              className={`px-4 py-2 rounded-full font-semibold border transition-colors ${editProfile.role === 'student' ? 'bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200 border-blue-400 dark:border-blue-800' : 'bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-gray-700'} cursor-not-allowed opacity-60`}
-              type="button"
-              disabled
-            >
-              Student
-            </button>
-          </div>
-          <div className="space-y-3 mb-4">
-            {/* Name (read-only) */}
-            <Input
-              value={editProfile.name}
-              placeholder="Name"
-              disabled
-              className="opacity-60 cursor-not-allowed"
-            />
-            {/* Gmail (read-only) */}
-            <Input
-              value={profile?.email || ''}
-              placeholder="Gmail"
-              disabled
-              className="opacity-60 cursor-not-allowed"
-            />
-            {/* Editable fields */}
-            <Textarea
-              value={editProfile.bio}
-              onChange={e => setEditProfile(p => ({ ...p, bio: e.target.value }))}
-              placeholder="Bio"
-              rows={2}
-            />
-            <Input
-              value={editProfile.contactNo}
-              onChange={e => setEditProfile(p => ({ ...p, contactNo: e.target.value }))}
-              placeholder="Contact No."
-            />
-            <Input
-              value={editProfile.age}
-              onChange={e => setEditProfile(p => ({ ...p, age: e.target.value }))}
-              placeholder="Age"
-              type="number"
-            />
-            <Input
-              value={editProfile.facebook}
-              onChange={e => setEditProfile(p => ({ ...p, facebook: e.target.value }))}
-              placeholder="Facebook"
-            />
-            <div className="flex gap-2 justify-end pt-2">
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="px-4 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-sm font-medium shadow"
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-1 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition-colors text-sm font-medium shadow"
-              >
-                Cancel
-              </button>
+    <div className="w-full max-w-4xl mx-auto px-4 py-8 text-foreground">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-14 w-14">
+                <AvatarImage src={profile?.avatarUrl || ''} alt={profile?.name || ''} />
+                <AvatarFallback>{(profile?.name || '?').slice(0,2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-2xl font-bold">{profile?.name || '—'}</h2>
+                  {profile?.role && (
+                    <Badge variant="secondary" className="capitalize">{profile.role}</Badge>
+                  )}
+                </div>
+                <p className="text-muted-foreground">{handle}</p>
+              </div>
             </div>
+            {editable && !isEditing && (
+              <Button onClick={handleEdit} variant="default" size="sm" className="inline-flex items-center gap-2">
+                <Edit2 className="w-4 h-4" /> Edit Profile
+              </Button>
+            )}
           </div>
-        </>
-      ) : (
-        <>
-          <h2 className="text-3xl font-bold mb-1">{profile?.name || '—'}</h2>
-          <p className="text-blue-600 dark:text-blue-300 font-medium mb-2">{handle}</p>
-          <p className="mt-2 text-gray-700 dark:text-gray-300 text-base mb-4">{profile?.bio || 'No bio yet.'}</p>
-        </>
-      )}
-      {/* Info Cards */}
-      <div className="mt-6 space-y-5">
-        <div className="rounded-2xl p-5 shadow bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-          <div className="font-semibold text-lg mb-3 flex items-center gap-2"><User className="w-5 h-5 text-blue-500" /> Account Info</div>
-          <div className="flex items-center gap-2 mb-1"><Mail className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Gmail:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.email || 'Not set'}</span></div>
-          <div className="flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Role:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Not set'}</span></div>
-        </div>
+          {!isEditing ? (
+            <p className="mt-4 text-sm sm:text-base text-muted-foreground">{profile?.bio || 'No bio yet.'}</p>
+          ) : (
+            <div className="mt-6 space-y-4">
+              <div className="flex gap-2 flex-wrap items-center">
+                <Badge variant="outline" className="capitalize">{editProfile.role}</Badge>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Name</label>
+                    <Input value={editProfile.name} disabled className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <Input value={profile?.email || ''} disabled className="mt-1" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Bio</label>
+                  <Textarea value={editProfile.bio} onChange={e => setEditProfile(p => ({ ...p, bio: e.target.value }))} rows={3} className="mt-1" />
+                </div>
+                {editProfile.role === 'teacher' && (
+                  <div>
+                    <label className="text-sm font-medium">Employee Number</label>
+                    <Input value={editProfile.employeeNumber} onChange={e => setEditProfile(p => ({ ...p, employeeNumber: e.target.value }))} className="mt-1" />
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Contact No.</label>
+                    <Input value={editProfile.contactNo} onChange={e => setEditProfile(p => ({ ...p, contactNo: e.target.value }))} className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Age</label>
+                    <Input type="number" value={editProfile.age} onChange={e => setEditProfile(p => ({ ...p, age: e.target.value }))} className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Facebook</label>
+                    <Input value={editProfile.facebook} onChange={e => setEditProfile(p => ({ ...p, facebook: e.target.value }))} className="mt-1" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button onClick={handleSave} disabled={loading} className="min-w-[6rem]">{loading ? 'Saving…' : 'Save'}</Button>
+                <Button onClick={handleCancel} variant="outline">Cancel</Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-blue-500" /> Account Info</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Email:</span> <span>{profile?.email || 'Not set'}</span></div>
+            <div className="flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Role:</span> <span className="capitalize">{profile?.role || 'Not set'}</span></div>
+            <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Last Login:</span> <span>{profile?.lastLogin || 'Not set'}</span></div>
+          </CardContent>
+        </Card>
+
         {profile?.role === 'student' && (
-          <div className="rounded-2xl p-5 shadow bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-            <div className="font-semibold text-lg mb-3 flex items-center gap-2"><Hash className="w-5 h-5 text-blue-500" /> Student Details</div>
-            <div className="flex items-center gap-2 mb-1"><Hash className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">LRN:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.lrn || 'Not set'}</span></div>
-            <div className="flex items-center gap-2 mb-1"><Phone className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Contact No:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.contactNo || 'Not set'}</span></div>
-            <div className="flex items-center gap-2 mb-1"><Calendar className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Age:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.age !== undefined && profile?.age !== null ? profile.age : 'Not set'}</span></div>
-            <div className="flex items-center gap-2 mb-1"><User className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Section(s):</span> {sectionsLoading ? 'Loading...' : sections.length > 0 ? sections.map((s, i) => (
-              <span key={s.sectionId || i} className="inline-block bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200 rounded px-2 py-1 text-xs mr-1">{s.sectionName} ({s.gradeLevel})</span>
-            )) : <span className="text-gray-700 dark:text-gray-300">None</span>}</div>
-            <div className="flex items-center gap-2 mb-1"><BadgeCheck className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Seniority:</span> <span className="text-gray-700 dark:text-gray-300">{sections.length > 0 ? getSeniority(sections[0].gradeLevel) : 'Not set'}</span></div>
-            <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Last Login:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.lastLogin || 'Not set'}</span></div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Hash className="w-5 h-5 text-blue-500" /> Student Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex items-center gap-2"><Hash className="w-4 h-4 text-muted-foreground" /><span className="font-medium">LRN:</span> <span>{profile?.lrn || 'Not set'}</span></div>
+              <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Contact No:</span> <span>{profile?.contactNo || 'Not set'}</span></div>
+              <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Age:</span> <span>{profile?.age !== undefined && profile?.age !== null ? profile.age : 'Not set'}</span></div>
+              <div className="flex items-start gap-2"><User className="w-4 h-4 text-muted-foreground mt-0.5" /><span className="font-medium">Section(s):</span> <div>{sectionsLoading ? 'Loading...' : sections.length > 0 ? sections.map((s, i) => (
+                <span key={s.sectionId || i} className="inline-block bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200 rounded px-2 py-1 text-xs mr-1 mb-1">{s.sectionName} ({s.gradeLevel})</span>
+              )) : <span>None</span>}</div></div>
+              <div className="flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Seniority:</span> <span>{sections.length > 0 ? getSeniority(sections[0].gradeLevel) : 'Not set'}</span></div>
+            </CardContent>
+          </Card>
         )}
+
         {profile?.role === 'teacher' && (
-          <div className="rounded-2xl p-5 shadow bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-            <div className="font-semibold text-lg mb-3 flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-blue-500" /> Teacher Details</div>
-            <div className="flex items-center gap-2 mb-1"><Hash className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Employee Number:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.employeeNumber || 'Not set'}</span></div>
-            <div className="flex items-center gap-2 mb-1"><Phone className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Contact No:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.contactNo || 'Not set'}</span></div>
-            <div className="flex items-center gap-2 mb-1"><Facebook className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Facebook:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.facebook || 'Not set'}</span></div>
-            <div className="flex items-center gap-2 mb-1"><User className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Sections Handling:</span> <span className="text-gray-700 dark:text-gray-300">Not set</span></div>
-            <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-gray-400" /><span className="font-semibold text-gray-700 dark:text-gray-300">Last Login:</span> <span className="text-gray-700 dark:text-gray-300">{profile?.lastLogin || 'Not set'}</span></div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-blue-500" /> Teacher Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex items-center gap-2"><Hash className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Employee Number:</span> <span>{profile?.employeeNumber || 'Not set'}</span></div>
+              <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Age:</span> <span>{profile?.age !== undefined && profile?.age !== null ? profile.age : 'Not set'}</span></div>
+              <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Contact No:</span> <span>{profile?.contactNo || 'Not set'}</span></div>
+              <div className="flex items-center gap-2"><Facebook className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Facebook:</span> <span>{profile?.facebook || 'Not set'}</span></div>
+              <div className="flex items-start gap-2"><User className="w-4 h-4 text-muted-foreground mt-0.5" /><span className="font-medium">Sections Handling:</span> <div>{sectionsLoading ? 'Loading...' : sections.length > 0 ? sections.map((s, i) => (
+                <span key={s.id || i} className="inline-block bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200 rounded px-2 py-1 text-xs mr-1 mb-1">{s.name} ({s.gradeLevel})</span>
+              )) : <span>None</span>}</div></div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { StudentUserService } from '@/services/gradesService';
+import { StudentUserService, getTeacherSections } from '@/services/gradesService';
 import { useTheme } from 'next-themes';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +8,7 @@ import { ProfileView } from '@/components/ProfileView';
 import { getDoc, doc as firestoreDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import EducHubHeader from '@/components/EducHubHeader';
+import type { Section } from '@/types/grading';
 
 interface ProfilePageProps {
   viewOnly?: boolean;
@@ -33,6 +34,8 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
   const { id } = useParams();
   const [viewUser, setViewUser] = useState<any>(null);
   const [loadingViewUser, setLoadingViewUser] = useState(false);
+  const [teacherSections, setTeacherSections] = useState<Section[]>([]);
+  const [teacherSectionsLoading, setTeacherSectionsLoading] = useState(false);
 
   useEffect(() => {
     if (viewOnly && id) {
@@ -46,8 +49,35 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
     }
   }, [viewOnly, id]);
 
+  // Load sections for teachers (self profile)
   useEffect(() => {
-    async function fetchSections() {
+    async function fetchTeacherSections() {
+      if (!viewOnly && user?.role === 'teacher') {
+        setTeacherSectionsLoading(true);
+        const sections = await getTeacherSections(user.id);
+        setTeacherSections(sections);
+        setTeacherSectionsLoading(false);
+      }
+    }
+    fetchTeacherSections();
+  }, [user?.role, user?.id, viewOnly]);
+
+  // Load sections for view-only teacher profile
+  useEffect(() => {
+    async function fetchViewedTeacherSections() {
+      if (viewOnly && viewUser?.role === 'teacher') {
+        setTeacherSectionsLoading(true);
+        const sections = await getTeacherSections(viewUser.id);
+        setTeacherSections(sections);
+        setTeacherSectionsLoading(false);
+      }
+    }
+    fetchViewedTeacherSections();
+  }, [viewOnly, viewUser?.id, viewUser?.role]);
+
+  // Load sections for students
+  useEffect(() => {
+    async function fetchStudentSections() {
       if (!viewOnly && user?.role === 'student' && userLRN) {
         setSectionsLoading(true);
         const res = await StudentUserService.getUserSections(userLRN);
@@ -59,7 +89,7 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
         setSectionsLoading(false);
       }
     }
-    fetchSections();
+    fetchStudentSections();
   }, [user?.role, userLRN, viewOnly]);
 
   useEffect(() => {
@@ -73,17 +103,17 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
     });
   }, [user]);
 
-  const handleSave = async () => {
+  const handleSave = async (updates: {
+    name?: string;
+    bio?: string;
+    contactNo?: string;
+    age?: number;
+    facebook?: string;
+    role?: 'teacher' | 'student' | 'parent';
+  }) => {
     setIsSaving(true);
     try {
-      const success = await updateUserProfile({
-        name: editProfile.name,
-        bio: editProfile.bio,
-        contactNo: editProfile.contactNo,
-        age: editProfile.age ? Number(editProfile.age) : undefined,
-        facebook: editProfile.facebook,
-        role: editProfile.role,
-      });
+      const success = await updateUserProfile(updates);
       if (success) {
         setIsEditing(false);
         toast({
@@ -116,8 +146,8 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
           profile={viewUser}
           editable={false}
           loading={loadingViewUser}
-          sections={[]}
-          sectionsLoading={false}
+          sections={viewUser?.role === 'teacher' ? teacherSections : []}
+          sectionsLoading={teacherSectionsLoading}
         />
       </div>
     );
@@ -131,8 +161,8 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
         editable={true}
         onSave={handleSave}
         loading={isSaving}
-        sections={studentSections}
-        sectionsLoading={sectionsLoading}
+        sections={user?.role === 'teacher' ? teacherSections : studentSections}
+        sectionsLoading={user?.role === 'teacher' ? teacherSectionsLoading : sectionsLoading}
       />
     </div>
   );

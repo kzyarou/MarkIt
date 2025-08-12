@@ -20,6 +20,7 @@ import { useRef } from 'react';
 import { useDrafts } from '@/contexts/DraftsContext';
 import { useTheme } from 'next-themes';
 import EducHubHeader from '@/components/EducHubHeader';
+import { Input } from '@/components/ui/input';
 
 export default function Dashboard() {
   const { theme } = useTheme();
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { drafts, deleteDraft: deleteDraftContext, refreshDrafts } = useDrafts();
   const [_, forceUpdate] = React.useReducer(x => x + 1, 0);
+  const [searchTerm, setSearchTerm] = useState('');
   console.log('Dashboard drafts:', drafts);
   useEffect(() => {
     refreshDrafts();
@@ -262,53 +264,30 @@ export default function Dashboard() {
     <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} pb-32`}>
       <EducHubHeader subtitle="Dashboard" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          {/* Card 1 */}
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm dark:bg-[#0F1A2B] p-6 flex flex-col items-center">
-            <div className="flex flex-row items-center gap-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 text-muted-foreground">
-                <path d="M12 7v14"></path>
-                <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
-              </svg>
-              <span className="text-3xl md:text-5xl font-bold">1</span>
-            </div>
-            <span className="text-lg md:text-xl text-muted-foreground mt-2">Total Sections</span>
+        {/* Toolbar */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+          <div>
+            <h2 className="text-xl font-semibold">Your Sections</h2>
+            <p className="text-sm text-muted-foreground">Manage and track your classes</p>
           </div>
-          {/* Card 2 */}
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm dark:bg-[#0F1A2B] p-6 flex flex-col items-center">
-            <div className="flex flex-row items-center gap-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 text-muted-foreground">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-              <span className="text-3xl md:text-5xl font-bold">2</span>
-            </div>
-            <span className="text-lg md:text-xl text-muted-foreground mt-2">Total Students</span>
-          </div>
-          {/* Card 3 */}
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm dark:bg-[#0F1A2B] p-6 flex flex-col items-center">
-            <div className="flex flex-row items-center gap-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 text-green-600">
-                <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
-                <circle cx="12" cy="8" r="6"></circle>
-              </svg>
-              <span className="text-3xl md:text-5xl font-bold text-green-600">0</span>
-            </div>
-            <span className="text-lg md:text-xl text-muted-foreground mt-2">Connected Users</span>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Search sections..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-56"
+            />
+            <Button onClick={createSection}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Section
+            </Button>
           </div>
         </div>
 
-        <div className="flex justify-end mb-4">
-          <Button onClick={createSection}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Section
-          </Button>
-        </div>
+        
 
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Your Sections</h2>
+          {/* Sections List */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
@@ -393,78 +372,99 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sections.map((section) => (
-                  <Card
-                    key={section.id}
-                    className={`hover:shadow-md transition-shadow cursor-pointer ${deletingId === section.id ? 'animate-pop-out' : ''}`}
-                  >
-                    <CardHeader>
-                      <CardTitle className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold">{section.name}</h3>
-                          <Badge variant="secondary" className="mt-1">Grade {section.gradeLevel}</Badge>
-                          <span className="ml-2 text-xs text-gray-500">Created by: {teacherMap[section.createdBy] || section.createdBy}</span>
-                        </div>
-                        <button
-                          className="ml-2 text-red-600 hover:text-red-800 text-xs border border-red-200 rounded px-2 py-1"
-                          onClick={e => { e.stopPropagation(); handleDeleteSection(section.id); }}
-                          title="Delete Section"
+              {(() => {
+                const term = searchTerm.trim().toLowerCase();
+                const visible = term
+                  ? sections.filter(s =>
+                      s.name.toLowerCase().includes(term) ||
+                      String(s.gradeLevel).toLowerCase().includes(term)
+                    )
+                  : sections;
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {visible.map((section) => {
+                      const gradeNum = Number(section.gradeLevel);
+                      const isSenior = section.classification === 'senior' || gradeNum === 11 || gradeNum === 12;
+                      const isJunior = section.classification === 'junior' || [7,8,9,10].includes(gradeNum);
+                      return (
+                        <Card
+                          key={section.id}
+                          className={`hover:shadow-md transition-shadow cursor-pointer ${deletingId === section.id ? 'animate-pop-out' : ''}`}
                         >
-                          Delete
-                        </button>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex justify-between">
-                          <span>Students:</span>
-                          <span className="font-medium">{section.students.length}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Subjects:</span>
-                          <span className="font-medium">{section.subjects.length}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Connected:</span>
-                          <span className="font-medium text-green-600">
-                            {section.students.filter(s => s.connectedUserId).length}
-                          </span>
-                        </div>
-                      </div>
-                      <div 
-                        className="flex justify-center mt-4 gap-4"
-                      >
-                        <svg fill="none" width="36" height="36" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-9 h-9 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer" onClick={() => navigate(`/section/${section.id}`)} title="View Section">
-                          <g>
-                            <path d="M25,26a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V5H17V3H5V26a3,3,0,0,0,3,3H24a3,3,0,0,0,3-3V13H25Z" fill="currentColor"/>
-                            <path d="M27.12,2.88a3.08,3.08,0,0,0-4.24,0L17,8.75,16,14.05,21.25,13l5.87-5.87A3,3,0,0,0,27.12,2.88Zm-6.86,8.27-1.76.35.35-1.76,3.32-3.33,1.42,1.42Zm5.45-5.44-.71.7L23.59,5l.7-.71h0a1,1,0,0,1,1.42,0A1,1,0,0,1,25.71,5.71Z" fill="currentColor"/>
-                          </g>
-                        </svg>
-                        <button type="button" className="p-0 bg-transparent border-none outline-none cursor-pointer" onClick={() => navigate(`/section/${section.id}/subjects-ecr`)} title="Exam Action">
-                          <svg width="36" height="36" viewBox="0 0 800 800" className="w-9 h-9 text-green-600 hover:text-green-800 transition-colors" xmlns="http://www.w3.org/2000/svg">
-                            <g>
-                              <path d="M676.637,183.386c0.002-0.002,0.004-0.004,0.005-0.005L522.549,29.287c-3.619-3.62-8.62-5.86-14.145-5.86H137.5   c-11.046,0-20,8.954-20,20v713.146c0,11.046,8.954,20,20,20h525c11.046,0,20-8.954,20-20V197.522   C682.5,192.407,680.426,187.203,676.637,183.386z M642.5,736.573h-485V63.427h342.62l114.096,114.095l-85.812,0v-41.788   c0-11.046-8.954-20-20-20s-20,8.954-20,20v61.788c0,11.046,8.954,20,20,20c0,0,92.404,0,134.096,0V736.573z" fill="currentColor"/>
-                              <path d="M295.217,224.417l-39.854,39.855l-5.697-5.697c-7.811-7.811-20.473-7.811-28.283,0c-7.811,7.81-7.811,20.473,0,28.284   l19.84,19.84c3.75,3.751,8.838,5.858,14.142,5.858c5.305,0,10.392-2.107,14.143-5.858l53.996-53.999   c7.81-7.811,7.81-20.474-0.001-28.284C315.69,216.606,303.027,216.606,295.217,224.417z" fill="currentColor"/>
-                              <path d="M557.831,312.557h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,312.557,557.831,312.557z" fill="currentColor"/>
-                              <path d="M367.389,272.557c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20s-8.954-20-20-20H367.389z" fill="currentColor"/>
-                              <path d="M557.831,435.552h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,435.552,557.831,435.552z" fill="currentColor"/>
-                              <path d="M496.998,395.552H367.389c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20   S508.044,395.552,496.998,395.552z" fill="currentColor"/>
-                              <path d="M557.831,558.547h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,558.547,557.831,558.547z" fill="currentColor"/>
-                              <path d="M496.998,518.547H367.389c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20   S508.044,518.547,496.998,518.547z" fill="currentColor"/>
-                              <path d="M557.831,681.542h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,681.542,557.831,681.542z" fill="currentColor"/>
-                              <path d="M496.998,641.542H367.389c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20   S508.044,641.542,496.998,641.542z" fill="currentColor"/>
-                              <path d="M255.363,435.552c5.304,0,10.392-2.107,14.142-5.858l53.996-53.996c7.811-7.811,7.811-20.475,0-28.285   s-20.473-7.811-28.283,0l-39.854,39.855l-5.697-5.698c-7.81-7.81-20.474-7.812-28.284-0.001s-7.811,20.474-0.001,28.284   l19.84,19.841C244.972,433.444,250.059,435.552,255.363,435.552z" fill="currentColor"/>
-                              <path d="M234.239,511.547l-12.856,12.857c-7.81,7.811-7.81,20.474,0.001,28.284c3.905,3.905,9.023,5.857,14.142,5.857   s10.237-1.952,14.143-5.858l12.855-12.855l12.856,12.855c3.904,3.906,9.023,5.858,14.142,5.858s10.237-1.952,14.142-5.858   c7.811-7.811,7.811-20.473,0-28.283l-12.855-12.857l12.856-12.857c7.81-7.811,7.81-20.474-0.001-28.284   c-7.811-7.81-20.474-7.81-28.284,0.001l-12.856,12.856l-12.857-12.856c-7.811-7.811-20.473-7.811-28.283,0s-7.811,20.474,0,28.283   L234.239,511.547z" fill="currentColor"/>
-                              <path d="M295.217,593.4l-39.854,39.855l-5.697-5.697c-7.811-7.811-20.473-7.811-28.283,0c-7.811,7.81-7.811,20.473,0,28.283   l19.84,19.84c3.75,3.752,8.838,5.858,14.142,5.858c5.305,0,10.392-2.107,14.143-5.858l53.996-53.998   c7.81-7.811,7.81-20.474-0.001-28.284C315.69,585.59,303.027,585.59,295.217,593.4z" fill="currentColor"/>
-                            </g>
-                          </svg>
-                        </button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                          <CardHeader>
+                            <CardTitle className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold">{section.name}</h3>
+                                <Badge variant="secondary" className="mt-1">Grade {section.gradeLevel}</Badge>
+                                <span className="ml-2 text-xs text-gray-500">Created by: {teacherMap[section.createdBy] || section.createdBy}</span>
+                                <div className="text-xs mt-1">
+                                  {isSenior ? '2 Semesters' : isJunior ? '4 Quarters' : ''}
+                                </div>
+                              </div>
+                              <button
+                                className="ml-2 text-red-600 hover:text-red-800 text-xs border border-red-200 rounded px-2 py-1"
+                                onClick={e => { e.stopPropagation(); handleDeleteSection(section.id); }}
+                                title="Delete Section"
+                              >
+                                Delete
+                              </button>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2 text-sm text-gray-600">
+                              <div className="flex justify-between">
+                                <span>Students:</span>
+                                <span className="font-medium">{section.students.length}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Subjects:</span>
+                                <span className="font-medium">{section.subjects.length}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Connected:</span>
+                                <span className="font-medium text-green-600">
+                                  {section.students.filter(s => s.connectedUserId).length}
+                                </span>
+                              </div>
+                            </div>
+                            <div 
+                              className="flex justify-center mt-4 gap-4"
+                            >
+                              <svg fill="none" width="36" height="36" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-9 h-9 text-blue-600 hover:text-blue-800 transition-colors cursor-pointer" onClick={() => navigate(`/section/${section.id}`)}>
+                                <title>View Section</title>
+                                <g>
+                                  <path d="M25,26a1,1,0,0,1-1,1H8a1,1,0,0,1-1-1V5H17V3H5V26a3,3,0,0,0,3,3H24a3,3,0,0,0,3-3V13H25Z" fill="currentColor"/>
+                                  <path d="M27.12,2.88a3.08,3.08,0,0,0-4.24,0L17,8.75,16,14.05,21.25,13l5.87-5.87A3,3,0,0,0,27.12,2.88Zm-6.86,8.27-1.76.35.35-1.76,3.32-3.33,1.42,1.42Zm5.45-5.44-.71.7L23.59,5l.7-.71h0a1,1,0,0,1,1.42,0A1,1,0,0,1,25.71,5.71Z" fill="currentColor"/>
+                                </g>
+                              </svg>
+                              <button type="button" className="p-0 bg-transparent border-none outline-none cursor-pointer" onClick={() => navigate(`/section/${section.id}/subjects-ecr`)}>
+                                <svg width="36" height="36" viewBox="0 0 800 800" className="w-9 h-9 text-green-600 hover:text-green-800 transition-colors" xmlns="http://www.w3.org/2000/svg">
+                                  <title>Exam Action</title>
+                                  <g>
+                                    <path d="M676.637,183.386c0.002-0.002,0.004-0.004,0.005-0.005L522.549,29.287c-3.619-3.62-8.62-5.86-14.145-5.86H137.5   c-11.046,0-20,8.954-20,20v713.146c0,11.046,8.954,20,20,20h525c11.046,0,20-8.954,20-20V197.522   C682.5,192.407,680.426,187.203,676.637,183.386z M642.5,736.573h-485V63.427h342.62l114.096,114.095l-85.812,0v-41.788   c0-11.046-8.954-20-20-20s-20,8.954-20,20v61.788c0,11.046,8.954,20,20,20c0,0,92.404,0,134.096,0V736.573z" fill="currentColor"/>
+                                    <path d="M295.217,224.417l-39.854,39.855l-5.697-5.697c-7.811-7.811-20.473-7.811-28.283,0c-7.811,7.81-7.811,20.473,0,28.284   l19.84,19.84c3.75,3.751,8.838,5.858,14.142,5.858c5.305,0,10.392-2.107,14.143-5.858l53.996-53.999   c7.81-7.811,7.81-20.474-0.001-28.284C315.69,216.606,303.027,216.606,295.217,224.417z" fill="currentColor"/>
+                                    <path d="M557.831,312.557h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,312.557,557.831,312.557z" fill="currentColor"/>
+                                    <path d="M367.389,272.557c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20s-8.954-20-20-20H367.389z" fill="currentColor"/>
+                                    <path d="M557.831,435.552h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,435.552,557.831,435.552z" fill="currentColor"/>
+                                    <path d="M496.998,395.552H367.389c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20   S508.044,395.552,496.998,395.552z" fill="currentColor"/>
+                                    <path d="M557.831,558.547h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,558.547,557.831,558.547z" fill="currentColor"/>
+                                    <path d="M496.998,518.547H367.389c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20   S508.044,518.547,496.998,518.547z" fill="currentColor"/>
+                                    <path d="M557.831,681.542h6.646c11.046,0,20-8.954,20-20s-8.954-20-20-20h-6.646c-11.046,0-20,8.954-20,20   S546.785,681.542,557.831,681.542z" fill="currentColor"/>
+                                    <path d="M496.998,641.542H367.389c-11.046,0-20,8.954-20,20s8.954,20,20,20h129.609c11.046,0,20-8.954,20-20   S508.044,641.542,496.998,641.542z" fill="currentColor"/>
+                                    <path d="M255.363,435.552c5.304,0,10.392-2.107,14.142-5.858l53.996-53.996c7.811-7.811,7.811-20.475,0-28.285   s-20.473-7.811-28.283,0l-39.854,39.855l-5.697-5.698c-7.81-7.81-20.474-7.812-28.284-0.001s-7.811,20.474-0.001,28.284   l19.84,19.841C244.972,433.444,250.059,435.552,255.363,435.552z" fill="currentColor"/>
+                                    <path d="M234.239,511.547l-12.856,12.857c-7.81,7.811-7.81,20.474,0.001,28.284c3.905,3.905,9.023,5.857,14.142,5.857   s10.237-1.952,14.143-5.858l12.855-12.855l12.856,12.855c3.904,3.906,9.023,5.858,14.142,5.858s10.237-1.952,14.142-5.858   c7.811-7.811,7.811-20.473,0-28.283l-12.855-12.857l12.856-12.857c7.81-7.811,7.81-20.474-0.001-28.284   c-7.811-7.81-20.474-7.81-28.284,0.001l-12.856,12.856l-12.857-12.856c-7.811-7.811-20.473-7.811-28.283,0s-7.811,20.474,0,28.283   L234.239,511.547z" fill="currentColor"/>
+                                    <path d="M295.217,593.4l-39.854,39.855l-5.697-5.697c-7.811-7.811-20.473-7.811-28.283,0c-7.811,7.81-7.811,20.473,0,28.283   l19.84,19.84c3.75,3.752,8.838,5.858,14.142,5.858c5.305,0,10.392-2.107,14.143-5.858l53.996-53.998   c7.81-7.811,7.81-20.474-0.001-28.284C315.69,585.59,303.027,585.59,295.217,593.4z" fill="currentColor"/>
+                                  </g>
+                                </svg>
+                              </button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                    );
+                  })}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>

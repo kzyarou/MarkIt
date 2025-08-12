@@ -246,7 +246,7 @@ export default function StudentSubjectsPage() {
                           <span className="text-xs text-green-600 mt-1">Type: {subject.type}</span>
                         )}
                       </div>
-                      <Button className="w-full mt-4" size="sm">
+                      <Button className="w-full mt-4" size="sm" onClick={() => handleSubjectClick(subject)}>
                         Enter Grades
                       </Button>
                     </CardContent>

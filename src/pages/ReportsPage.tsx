@@ -11,6 +11,8 @@ import { GradesService } from '@/services/gradesService';
 import { useTheme } from 'next-themes';
 import { DepEdClassRecord } from '@/components/DepEdClassRecord';
 import EducHubHeader from '@/components/EducHubHeader';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ReportsPage() {
   const navigate = useNavigate();
@@ -24,6 +26,12 @@ export default function ReportsPage() {
   const [showClassRecord, setShowClassRecord] = useState(false);
   // Add state for selected subject
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  // Teacher name for ECR
+  const { user } = useAuth();
+  const [teacherName, setTeacherName] = useState<string>('');
+  useEffect(() => {
+    setTeacherName(user?.name || '');
+  }, [user]);
 
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -132,7 +140,11 @@ export default function ReportsPage() {
         <Button onClick={() => setShowClassRecord(false)} className="mb-4 print:hidden border border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" variant="outline">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Reports
         </Button>
-        <DepEdClassRecord section={selectedSection} />
+        <div className="flex items-center gap-3 mb-3 print:hidden">
+          <label className="text-sm font-medium" htmlFor="teacherName">Teacher Name</label>
+          <Input id="teacherName" value={teacherName} onChange={(e) => setTeacherName(e.target.value)} className="max-w-xs" />
+        </div>
+        <DepEdClassRecord section={selectedSection} teacherName={teacherName} />
         <div className="flex justify-end mt-4 print:hidden">
           <Button onClick={() => window.print()} variant="default">
             <Download className="w-4 h-4 mr-2" /> Print
@@ -195,49 +207,57 @@ export default function ReportsPage() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sections.map((section) => (
-                  <Card key={section.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{section.name}</h3>
-                          <p className="text-sm text-gray-600 font-normal">Grade {section.gradeLevel}</p>
+                {sections.map((section) => {
+                  const gradeNum = Number(section.gradeLevel);
+                  const isSenior = section.classification === 'senior' || gradeNum === 11 || gradeNum === 12;
+                  const isJunior = section.classification === 'junior' || [7,8,9,10].includes(gradeNum);
+                  return (
+                    <Card key={section.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold">{section.name}</h3>
+                            <p className="text-sm text-gray-600 font-normal">Grade {section.gradeLevel}</p>
+                            <div className="text-xs mt-1">
+                              {isSenior ? '2 Semesters' : isJunior ? '4 Quarters' : ''}
+                            </div>
+                          </div>
+                          <FileText className="w-5 h-5 text-blue-600" />
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Students:</span>
+                          <span className="font-medium">{section.students.length}</span>
                         </div>
-                        <FileText className="w-5 h-5 text-blue-600" />
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Students:</span>
-                        <span className="font-medium">{section.students.length}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Subjects:</span>
-                        <span className="font-medium">{section.subjects.length}</span>
-                      </div>
-                      
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          size="sm"
-                          onClick={() => viewSectionStudents(section)}
-                          className="flex-1"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View Cards
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => { setSelectedSection(section); setShowClassRecord(true); setSelectedSubject(null); }}
-                          className="flex-1"
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          View Class Record
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Subjects:</span>
+                          <span className="font-medium">{section.subjects.length}</span>
+                        </div>
+                        
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            onClick={() => viewSectionStudents(section)}
+                            className="flex-1"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Cards
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => { setSelectedSection(section); setShowClassRecord(true); setSelectedSubject(null); }}
+                            className="flex-1"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            View Class Record
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </>
@@ -298,8 +318,12 @@ export default function ReportsPage() {
                   ← Back
                 </Button>
                 <h2 className="text-xl font-bold">{selectedSection.subjects.find(s => s.id === selectedSubject)?.name} Class Record</h2>
+                <div className="ml-auto flex items-center gap-2 print:hidden">
+                  <label className="text-sm font-medium" htmlFor="teacherNameModal">Teacher</label>
+                  <Input id="teacherNameModal" value={teacherName} onChange={(e) => setTeacherName(e.target.value)} className="max-w-xs" />
+                </div>
               </div>
-              <DepEdClassRecord section={{ ...selectedSection, subjects: [selectedSection.subjects.find(s => s.id === selectedSubject)!] }} />
+              <DepEdClassRecord section={{ ...selectedSection, subjects: [selectedSection.subjects.find(s => s.id === selectedSubject)!] }} teacherName={teacherName} />
             </div>
           )}
         </DialogContent>

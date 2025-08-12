@@ -232,6 +232,14 @@ export async function getSections(): Promise<Section[]> {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
 }
 
+// Get sections handled/created by a specific teacher
+export async function getTeacherSections(teacherUserId: string): Promise<Section[]> {
+  const sectionsRef = collection(db, "sections");
+  const q = query(sectionsRef, where("createdBy", "==", teacherUserId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
+}
+
 export async function saveSection(section: Section): Promise<void> {
   const sectionRef = doc(db, "sections", section.id);
   await setDoc(sectionRef, section);

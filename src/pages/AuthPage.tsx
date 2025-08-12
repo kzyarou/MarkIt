@@ -379,6 +379,8 @@ export default function AuthPage() {
             avatarUrl: undefined,
             bio: undefined,
             gender: signupData.gender as 'male' | 'female', // <-- Type assertion
+            age: signupData.age ? Number(signupData.age) : undefined,
+            gradeLevel: signupData.gradeLevel ? `Grade ${signupData.gradeLevel}` : undefined,
           }
         : {
             name: signupData.name,
@@ -389,6 +391,8 @@ export default function AuthPage() {
             avatarUrl: undefined,
             bio: undefined,
             gender: signupData.gender as 'male' | 'female', // <-- Type assertion
+            employeeNumber: signupData.empId,
+            age: signupData.age ? Number(signupData.age) : undefined,
           };
       const success = await signup(payload);
       if (success) {

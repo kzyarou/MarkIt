@@ -4,6 +4,7 @@ import { calculateQuarterGrade } from '@/utils/gradeCalculations';
 
 interface DepEdClassRecordProps {
   section: Section;
+  teacherName?: string;
 }
 
 // Helper to gather all unique assessments for a category
@@ -52,7 +53,7 @@ function getQuarterData(student: Student, subjectId: string, quarter: string, su
   };
 }
 
-export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) => {
+export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section, teacherName }) => {
   // Determine if section is junior or senior (force by gradeLevel if classification missing)
   const gradeNum = Number(section.gradeLevel);
   const isSenior = section.classification === 'senior' || gradeNum === 11 || gradeNum === 12;
@@ -148,7 +149,7 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
       <div className="grid grid-cols-8 gap-2 text-xs mb-2">
         <div>SECOND QUARTER</div>
         <div>GRADE & SECTION: <span className="font-semibold">{section.name}</span></div>
-        <div>TEACHER: <span className="font-semibold">CLEO N. BELANDRES</span></div>
+        <div>TEACHER: <span className="font-semibold">{teacherName || ''}</span></div>
         <div>SUBJECT: <span className="font-semibold">{subject.name}</span></div>
       </div>
       {/* Table */}

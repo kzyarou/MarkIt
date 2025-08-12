@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSections, saveSection } from "@/services/gradesService";
-import { Section, Student, Subject } from "@/types/grading";
-import { ScoreEntry } from "@/types/grading";
+import { Section, Student, Subject, ScoreEntry, CategoryScores, QuarterGrades } from "@/types/grading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +82,8 @@ const SubjectECRDetailPage = () => {
     if (!students.length || !subject || !selectedStudentId) return;
     const student = students.find(s => s.id === selectedStudentId);
     if (!student) return;
-    const gradeData = student.gradeData?.[subject.id]?.[selectedQuarter] || {};
+    const emptyCategoryScores: CategoryScores = { writtenWork: [], performanceTask: [], quarterlyExam: [] };
+    const gradeData = (student.gradeData?.[subject.id]?.[selectedQuarter] as CategoryScores) ?? emptyCategoryScores;
     setAssessments({
       writtenWork: gradeData.writtenWork || [],
       performanceTask: gradeData.performanceTask || [],
@@ -99,10 +99,20 @@ const SubjectECRDetailPage = () => {
   };
 
   const handleAddAssessment = (cat: CategoryKey) => {
-    setAssessments(prev => ({
-      ...prev,
-      [cat]: [...prev[cat], { id: Date.now().toString(), name: '', score: 0, totalPoints: 0 }]
-    }));
+    setAssessments(prev => {
+      const count = prev[cat].length + 1;
+      const prefix = cat === "writtenWork" ? "WW" : cat === "performanceTask" ? "PT" : "QE";
+      const newEntry: ScoreEntry = {
+        id: Date.now().toString(),
+        name: `${prefix}#${count}`,
+        score: 0,
+        totalPoints: 0
+      };
+      return {
+        ...prev,
+        [cat]: [...prev[cat], newEntry]
+      };
+    });
   };
 
   const handleDeleteAssessment = (cat: CategoryKey, idx: number) => {
@@ -122,8 +132,15 @@ const SubjectECRDetailPage = () => {
     // Update gradeData for the selected student, subject, and quarter
     const updatedStudents = students.map(s => {
       if (s.id !== selectedStudentId) return s;
-      const prevGradeData = s.gradeData || {};
-      const prevSubjectData = prevGradeData[subject.id] || {};
+      const prevGradeData = s.gradeData || {} as any;
+      const createEmptyCategoryScores = (): CategoryScores => ({ writtenWork: [], performanceTask: [], quarterlyExam: [] });
+      const createEmptyQuarterGrades = (): QuarterGrades => ({
+        quarter1: createEmptyCategoryScores(),
+        quarter2: createEmptyCategoryScores(),
+        quarter3: createEmptyCategoryScores(),
+        quarter4: createEmptyCategoryScores(),
+      });
+      const prevSubjectData: QuarterGrades = prevGradeData[subject.id] || createEmptyQuarterGrades();
       return {
         ...s,
         gradeData: {

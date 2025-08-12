@@ -26,6 +26,8 @@ import FAQPage from './pages/FAQPage';
 import DataPrivacyPage from './pages/DataPrivacyPage';
 import TermsPage from './pages/TermsPage';
 import GradeCalculatorPage from './pages/GradeCalculatorPage';
+import { useIsMobile } from "@/hooks/use-mobile";
+import { AppSidebarLayout } from "@/components/AppSidebar";
 // import UserProfilePage from "./pages/UserProfilePage";
 
 const queryClient = new QueryClient();
@@ -51,6 +53,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   if (isLoading) {
     return (
@@ -60,93 +63,106 @@ function AppRoutes() {
     );
   }
 
-  const showBottomNav = user && !['/auth', '/onboarding'].includes(location.pathname);
+  const isAuthedArea = Boolean(user) && !['/auth', '/onboarding'].includes(location.pathname);
+  const showBottomNav = isAuthedArea && isMobile;
+
+  const routes = (
+    <Routes>
+      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/onboarding" element={
+        user ? <OnboardingPage /> : <Navigate to="/auth" replace />
+      } />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/create-section" element={
+        <ProtectedRoute>
+          <CreateSection />
+        </ProtectedRoute>
+      } />
+      <Route path="/section/:sectionId" element={
+        <ProtectedRoute>
+          <SectionDetailsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/section/:sectionId/students" element={
+        <ProtectedRoute>
+          <SectionStudentsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/section/:sectionId/student/:studentId" element={
+        <ProtectedRoute>
+          <StudentSubjectsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/reports" element={
+        <ProtectedRoute>
+          <ReportsPage />
+        </ProtectedRoute>
+      } />
+      {/* Add calculator route for students only */}
+      {user?.role === 'student' && (
+        <Route path="/calculator" element={
+          <ProtectedRoute>
+            <GradeCalculatorPage />
+          </ProtectedRoute>
+        } />
+      )}
+      <Route path="/search" element={
+        <ProtectedRoute>
+          <SearchPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/attendance" element={
+        <ProtectedRoute>
+          <AttendancePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile/:id" element={
+        <ProtectedRoute>
+          <ProfilePage viewOnly />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <SettingsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/faq" element={<FAQPage />} />
+      <Route path="/privacy" element={<DataPrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/section/:sectionId/subjects-ecr" element={
+        <ProtectedRoute>
+          <SubjectsECRPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/section/:sectionId/subjects-ecr/:subjectId" element={
+        <ProtectedRoute>
+          <SubjectECRDetailPage />
+        </ProtectedRoute>
+      } />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+
+  if (isAuthedArea && !isMobile) {
+    return (
+      <AppSidebarLayout>
+        {routes}
+      </AppSidebarLayout>
+    );
+  }
 
   return (
     <div className="relative">
-      <Routes>
-        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
-        <Route path="/onboarding" element={
-          user ? <OnboardingPage /> : <Navigate to="/auth" replace />
-        } />
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/create-section" element={
-          <ProtectedRoute>
-            <CreateSection />
-          </ProtectedRoute>
-        } />
-        <Route path="/section/:sectionId" element={
-          <ProtectedRoute>
-            <SectionDetailsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/section/:sectionId/students" element={
-          <ProtectedRoute>
-            <SectionStudentsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/section/:sectionId/student/:studentId" element={
-          <ProtectedRoute>
-            <StudentSubjectsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/reports" element={
-          <ProtectedRoute>
-            <ReportsPage />
-          </ProtectedRoute>
-        } />
-        {/* Add calculator route for students only */}
-        {user?.role === 'student' && (
-          <Route path="/calculator" element={
-            <ProtectedRoute>
-              <GradeCalculatorPage />
-            </ProtectedRoute>
-          } />
-        )}
-        <Route path="/search" element={
-          <ProtectedRoute>
-            <SearchPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/attendance" element={
-          <ProtectedRoute>
-            <AttendancePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile/:id" element={
-          <ProtectedRoute>
-            <ProfilePage viewOnly />
-          </ProtectedRoute>
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route path="/privacy" element={<DataPrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/section/:sectionId/subjects-ecr" element={
-          <ProtectedRoute>
-            <SubjectsECRPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/section/:sectionId/subjects-ecr/:subjectId" element={
-          <ProtectedRoute>
-            <SubjectECRDetailPage />
-          </ProtectedRoute>
-        } />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      {routes}
       {showBottomNav && <BottomNavigation />}
     </div>
   );

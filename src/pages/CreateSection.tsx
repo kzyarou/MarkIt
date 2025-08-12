@@ -10,6 +10,7 @@ import { saveSection, getSections } from '@/services/gradesService';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useDrafts } from '@/contexts/DraftsContext';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export default function CreateSection() {
   const { user } = useAuth();
@@ -18,8 +19,13 @@ export default function CreateSection() {
   const { saveDraft, deleteDraft } = useDrafts();
   const [formData, setFormData] = useState({
     name: '',
-    gradeLevel: ''
+    gradeLevel: '',
   });
+  // Add derived state for classification
+  const gradeNum = Number(formData.gradeLevel);
+  const isJunior = [7,8,9,10].includes(gradeNum);
+  const isSenior = [11,12].includes(gradeNum);
+  const classification = isJunior ? 'junior' : isSenior ? 'senior' : '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +39,8 @@ export default function CreateSection() {
       students: [],
       subjects: [],
       createdBy: user.id,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...(classification ? { classification } : {}),
     };
 
     await saveSection(newSection);
@@ -70,7 +77,8 @@ export default function CreateSection() {
       students: [],
       subjects: [],
       createdBy: user.id,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...(classification ? { classification } : {}),
     };
     console.log('Saving draft:', { userId: user.id, newSection });
     saveDraft(newSection);
@@ -90,7 +98,8 @@ export default function CreateSection() {
       students: [],
       subjects: [],
       createdBy: user.id,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...(classification ? { classification } : {}),
     };
     await saveSection(newSection);
     deleteDraft(newSection.id);
@@ -146,16 +155,27 @@ export default function CreateSection() {
                 <Label htmlFor="gradeLevel" className="text-base font-medium">
                   Grade Level
                 </Label>
-                <Input
-                  id="gradeLevel"
+                <Select
                   value={formData.gradeLevel}
-                  onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                  placeholder="e.g., 10, 11, 12"
+                  onValueChange={value => setFormData({ ...formData, gradeLevel: value })}
                   required
-                  className="mt-1"
-                />
+                >
+                  <SelectTrigger id="gradeLevel" className="mt-1">
+                    <SelectValue placeholder="Select grade level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7</SelectItem>
+                    <SelectItem value="8">8</SelectItem>
+                    <SelectItem value="9">9</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="11">11</SelectItem>
+                    <SelectItem value="12">12</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-gray-500 mt-1">
-                  Enter the grade level for this section
+                  {formData.gradeLevel === '' ? 'Select the grade level for this section' :
+                    isJunior ? 'Junior High School (4 quarters)' :
+                    isSenior ? 'Senior High School (2 semesters)' : ''}
                 </p>
               </div>
 

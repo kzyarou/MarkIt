@@ -40,7 +40,6 @@ export function StudentSubjectGradingModal({
     quarter3: { writtenWork: [], performanceTask: [], quarterlyExam: [] },
     quarter4: { writtenWork: [], performanceTask: [], quarterlyExam: [] }
   });
-  const [currentQuarter, setCurrentQuarter] = useState<'quarter1' | 'quarter2' | 'quarter3' | 'quarter4'>('quarter1');
   const [hideGrades, setHideGrades] = useState(false);
   const { toast } = useToast();
 
@@ -77,7 +76,7 @@ export function StudentSubjectGradingModal({
     if (category === 'writtenWork') prefix = 'WW';
     else if (category === 'performanceTask') prefix = 'PT';
     else if (category === 'quarterlyExam') prefix = 'QE';
-    const count = gradeData[currentQuarter][category].length + 1;
+    const count = gradeData[getCurrentQuarter()][category].length + 1;
     const defaultName = `${prefix}#${count}`;
 
     const newScore: ScoreEntry = {
@@ -89,9 +88,9 @@ export function StudentSubjectGradingModal({
 
     setGradeData(prev => ({
       ...prev,
-      [currentQuarter]: {
-        ...prev[currentQuarter],
-        [category]: [...prev[currentQuarter][category], newScore]
+      [getCurrentQuarter()]: {
+        ...prev[getCurrentQuarter()],
+        [category]: [...prev[getCurrentQuarter()][category], newScore]
       }
     }));
   };
@@ -99,9 +98,9 @@ export function StudentSubjectGradingModal({
   const updateScore = (category: keyof CategoryScores, scoreId: string, field: keyof ScoreEntry, value: string | number) => {
     setGradeData(prev => ({
       ...prev,
-      [currentQuarter]: {
-        ...prev[currentQuarter],
-        [category]: prev[currentQuarter][category].map(score =>
+      [getCurrentQuarter()]: {
+        ...prev[getCurrentQuarter()],
+        [category]: prev[getCurrentQuarter()][category].map(score =>
           score.id === scoreId ? { ...score, [field]: value } : score
         )
       }
@@ -111,9 +110,9 @@ export function StudentSubjectGradingModal({
   const removeScore = (category: keyof CategoryScores, scoreId: string) => {
     setGradeData(prev => ({
       ...prev,
-      [currentQuarter]: {
-        ...prev[currentQuarter],
-        [category]: prev[currentQuarter][category].filter(score => score.id !== scoreId)
+      [getCurrentQuarter()]: {
+        ...prev[getCurrentQuarter()],
+        [category]: prev[getCurrentQuarter()][category].filter(score => score.id !== scoreId)
       }
     }));
   };
@@ -257,15 +256,15 @@ export function StudentSubjectGradingModal({
   // Render assessments for the current quarter and category
   const renderAssessmentCategory = (category: 'writtenWork' | 'performanceTask' | 'quarterlyExam', title: string) => {
     // Filter assessments for this category and current quarter
-    const categoryAssessments = assessments.filter(a => a.category === category && a.quarter === currentQuarter);
+    const categoryAssessments = assessments.filter(a => a.category === category && a.quarter === getCurrentQuarter());
     // Get the student's scores for this category/quarter
-    const studentScores = gradeData[currentQuarter][category];
+    const studentScores = gradeData[getCurrentQuarter()][category];
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             {title}
-            <Button size="sm" onClick={() => addAssessment(category, currentQuarter)}>
+            <Button size="sm" onClick={() => addAssessment(category, getCurrentQuarter())}>
               <Plus className="w-4 h-4 mr-1" />
               Add Assessment
             </Button>
@@ -299,15 +298,15 @@ export function StudentSubjectGradingModal({
                       onChange={e => {
                         const value = parseFloat(e.target.value) || 0;
                         setGradeData(prev => {
-                          const updatedScores = prev[currentQuarter][category].some(s => s.id === assessment.id)
-                            ? prev[currentQuarter][category].map(s =>
+                          const updatedScores = prev[getCurrentQuarter()][category].some(s => s.id === assessment.id)
+                            ? prev[getCurrentQuarter()][category].map(s =>
                                 s.id === assessment.id ? { ...s, score: value } : s
                               )
-                            : [...prev[currentQuarter][category], { id: assessment.id, name: assessment.name, score: value, totalPoints: assessment.totalPoints }];
+                            : [...prev[getCurrentQuarter()][category], { id: assessment.id, name: assessment.name, score: value, totalPoints: assessment.totalPoints }];
                           return {
                             ...prev,
-                            [currentQuarter]: {
-                              ...prev[currentQuarter],
+                            [getCurrentQuarter()]: {
+                              ...prev[getCurrentQuarter()],
                               [category]: updatedScores
                             }
                           };
@@ -343,10 +342,39 @@ export function StudentSubjectGradingModal({
     );
   };
 
+  // Determine if section is junior or senior (force by gradeLevel if classification missing)
+  const gradeNum = Number(section.gradeLevel);
+  const isSenior = section.classification === 'senior' || gradeNum === 11 || gradeNum === 12;
+  const isJunior = section.classification === 'junior' || [7,8,9,10].includes(gradeNum);
+
+  // For senior, use semesters; for junior, use quarters
+  const seniorTabs = [
+    { key: 'sem1', label: '1st Semester', quarters: ['quarter1', 'quarter2'] as const },
+    { key: 'sem2', label: '2nd Semester', quarters: ['quarter3', 'quarter4'] as const },
+  ];
+  const juniorTabs = [
+    { key: 'quarter1', label: 'Quarter 1' },
+    { key: 'quarter2', label: 'Quarter 2' },
+    { key: 'quarter3', label: 'Quarter 3' },
+    { key: 'quarter4', label: 'Quarter 4' },
+  ];
+
+  // State for current period (quarter or semester)
+  const [currentPeriod, setCurrentPeriod] = useState<string>(isSenior ? 'sem1' : 'quarter1');
+
+  // Helper to get the current quarter for editing (for senior, default to first quarter of semester)
+  function getCurrentQuarter() {
+    if (isSenior) {
+      const sem = seniorTabs.find(tab => tab.key === currentPeriod);
+      return (sem ? sem.quarters[0] : 'quarter1') as 'quarter1' | 'quarter2' | 'quarter3' | 'quarter4';
+    }
+    return currentPeriod as 'quarter1' | 'quarter2' | 'quarter3' | 'quarter4';
+  }
+  const currentQuarter = getCurrentQuarter();
   const quarterResult = calculateQuarterGrade(gradeData[currentQuarter], subject);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -358,16 +386,15 @@ export function StudentSubjectGradingModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Quarter Tabs */}
-          <Tabs value={currentQuarter} onValueChange={(value) => setCurrentQuarter(value as any)}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="quarter1">Quarter 1</TabsTrigger>
-              <TabsTrigger value="quarter2">Quarter 2</TabsTrigger>
-              <TabsTrigger value="quarter3">Quarter 3</TabsTrigger>
-              <TabsTrigger value="quarter4">Quarter 4</TabsTrigger>
+          {/* Period Tabs */}
+          <Tabs value={currentPeriod} onValueChange={(value) => setCurrentPeriod(value)}>
+            <TabsList className={`grid w-full ${isSenior ? 'grid-cols-2' : 'grid-cols-4'}`}>
+              {(isSenior ? seniorTabs : juniorTabs).map(tab => (
+                <TabsTrigger key={tab.key} value={tab.key}>{tab.label}</TabsTrigger>
+              ))}
             </TabsList>
 
-            <TabsContent value={currentQuarter} className="space-y-6">
+            <TabsContent value={currentPeriod} className="space-y-6">
               {/* Grade Categories */}
               <div className="space-y-4">
                 {renderAssessmentCategory('writtenWork', `Written Work (${subject.writtenWorkWeight}%)`)}
@@ -375,10 +402,14 @@ export function StudentSubjectGradingModal({
                 {renderAssessmentCategory('quarterlyExam', `Quarterly Exam (${subject.quarterlyExamWeight}%)`)}
               </div>
 
-              {/* Quarter Summary */}
+              {/* Period Summary */}
               <Card className="bg-card">
                 <CardHeader>
-                  <CardTitle>Quarter {currentQuarter.slice(-1)} Summary</CardTitle>
+                  <CardTitle>
+                    {isSenior
+                      ? `${seniorTabs.find(tab => tab.key === currentPeriod)?.label} Summary`
+                      : `Quarter ${currentQuarter.slice(-1)} Summary`}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -407,7 +438,6 @@ export function StudentSubjectGradingModal({
                       </p>
                     </div>
                   </div>
-                  
                   <div className="text-center p-4 bg-card rounded-lg border-2 border-blue-200">
                     <p className="text-sm text-gray-600 mb-2">Final Quarter Grade</p>
                     <p className={`text-4xl font-bold ${getGradeColor(quarterResult.transmutedGrade)}`}>

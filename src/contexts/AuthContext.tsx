@@ -86,6 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (userDoc.exists()) {
         userProfile = userDoc.data();
       }
+      // Update lastLogin timestamp
+      const lastLogin = new Date().toISOString();
+      await updateDoc(doc(db, 'users', firebaseUser.uid), { lastLogin });
       setUser({
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
@@ -98,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         age: userProfile?.age || null,
         employeeNumber: userProfile?.employeeNumber || '',
         facebook: userProfile?.facebook || '',
-        lastLogin: userProfile?.lastLogin || '',
+        lastLogin: lastLogin,
         gender: userProfile?.gender || undefined, // <-- Added gender
         gradeLevel: userProfile?.gradeLevel || '',
       });
@@ -115,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         age: userProfile?.age || null,
         employeeNumber: userProfile?.employeeNumber || '',
         facebook: userProfile?.facebook || '',
-        lastLogin: userProfile?.lastLogin || '',
+        lastLogin,
         gender: userProfile?.gender || undefined, // <-- Added gender
         gradeLevel: userProfile?.gradeLevel || '',
       }));
