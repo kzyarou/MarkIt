@@ -9,6 +9,7 @@ import { getSections, saveSection } from '@/services/gradesService';
 import { loadDraft, saveDraft } from '@/utils/localDrafts';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export default function SectionStudentsPage() {
   const { sectionId } = useParams<{ sectionId: string }>();
@@ -18,6 +19,7 @@ export default function SectionStudentsPage() {
   const [section, setSection] = useState<Section | null>(null);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentLRN, setNewStudentLRN] = useState('');
+  const [newStudentGender, setNewStudentGender] = useState<'male' | 'female' | ''>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,6 +58,9 @@ export default function SectionStudentsPage() {
     if (lrnValue) {
       newStudent.lrn = lrnValue;
     }
+    if (newStudentGender) {
+      newStudent.gender = newStudentGender;
+    }
 
     const updatedSection = {
       ...section,
@@ -76,6 +81,7 @@ export default function SectionStudentsPage() {
       }
       setNewStudentName('');
       setNewStudentLRN('');
+      setNewStudentGender('');
       toast({
         title: "Student Added",
         description: `${newStudent.name} has been added to the section.`
@@ -174,6 +180,17 @@ export default function SectionStudentsPage() {
                   onChange={(e) => setNewStudentLRN(e.target.value)}
                 />
               </div>
+              <div className="w-48">
+                <Select value={newStudentGender} onValueChange={(v) => setNewStudentGender(v as 'male' | 'female')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Gender (Optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button 
                 onClick={handleAddStudent}
                 disabled={!newStudentName.trim()}
@@ -206,6 +223,9 @@ export default function SectionStudentsPage() {
                       <h3 className="font-medium">{student.name}</h3>
                       {student.lrn && (
                         <p className="text-sm text-gray-600">LRN: {student.lrn}</p>
+                      )}
+                      {student.gender && (
+                        <p className="text-sm text-gray-600 capitalize">Gender: {student.gender}</p>
                       )}
                     </div>
                     <Button

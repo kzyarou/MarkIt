@@ -24,6 +24,7 @@ interface MockUser {
   email: string;
   lrn?: string;
   role: 'student' | 'teacher';
+  gender?: 'male' | 'female';
 }
 
 export function UserConnectionModal({ isOpen, onClose, student, onConnect, onDisconnect }: UserConnectionModalProps) {
@@ -72,6 +73,7 @@ export function UserConnectionModal({ isOpen, onClose, student, onConnect, onDis
           email: user.email,
           lrn: user.lrn,
           role: user.role,
+          gender: user.gender,
         });
       }
     });
@@ -96,6 +98,7 @@ export function UserConnectionModal({ isOpen, onClose, student, onConnect, onDis
           email: currentUser.email,
           lrn: currentUser.lrn,
           role: currentUser.role as 'student' | 'teacher',
+          gender: currentUser.gender,
         },
         ...results
       ];
@@ -123,7 +126,8 @@ export function UserConnectionModal({ isOpen, onClose, student, onConnect, onDis
         ...student,
         connectedUserId: userData.id,
         connectedUserLRN: userData.lrn,
-        connectedUserEmail: userData.email
+        connectedUserEmail: userData.email,
+        gender: userData.gender || student.gender
       };
       await onConnect(updatedStudent, userData);
       toast({

@@ -51,6 +51,7 @@ export interface Student {
   name: string;
   lrn?: string;
   gradeData: StudentGradeData;
+  gender?: 'male' | 'female';
   connectedUserId?: string;
   connectedUserLRN?: string;
   connectedUserEmail?: string;
@@ -64,6 +65,7 @@ export interface Section {
   subjects: Subject[];
   createdBy: string;
   createdAt: string;
+  classification?: 'junior' | 'senior'; // Added for DepEd logic
 }
 
 export interface Grade {

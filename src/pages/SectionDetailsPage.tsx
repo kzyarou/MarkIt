@@ -98,10 +98,14 @@ export default function SectionDetailsPage() {
 
   const handleStudentConnect = async (updatedStudent: Student, userData: any) => {
     if (!section) return;
+    const studentWithGender: Student = {
+      ...updatedStudent,
+      gender: (updatedStudent.gender ?? userData?.gender) as any,
+    };
     const updatedSection = {
       ...section,
       students: section.students.map(s =>
-        s.id === updatedStudent.id ? updatedStudent : s
+        s.id === updatedStudent.id ? studentWithGender : s
       )
     };
     setSection(updatedSection);
@@ -114,7 +118,7 @@ export default function SectionDetailsPage() {
       // Connect student to user in Firestore
       try {
         await StudentUserService.connectStudentToUser(
-          updatedStudent,
+          studentWithGender,
           userData,
           updatedSection,
           user?.id || 'system'
@@ -420,12 +424,14 @@ export default function SectionDetailsPage() {
           onSubjectsChange={handleSubjectsChange}
         />
 
-        {showGradingModal && selectedStudent && selectedSubject && (
+        {showGradingModal && selectedStudent && selectedSubject && section && (
           <StudentSubjectGradingModal
             isOpen={showGradingModal}
             onClose={() => setShowGradingModal(false)}
             student={selectedStudent}
             subject={selectedSubject}
+            section={section}
+            setSection={setSection}
             onSave={handleGradeSave}
           />
         )}

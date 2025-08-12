@@ -53,14 +53,31 @@ function getQuarterData(student: Student, subjectId: string, quarter: string, su
 }
 
 export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) => {
-  // Add quarter selector state
-  const [quarter, setQuarter] = useState<'quarter1' | 'quarter2' | 'quarter3' | 'quarter4'>('quarter2');
+  // Determine if section is junior or senior (force by gradeLevel if classification missing)
+  const gradeNum = Number(section.gradeLevel);
+  const isSenior = section.classification === 'senior' || gradeNum === 11 || gradeNum === 12;
+  const isJunior = section.classification === 'junior' || [7,8,9,10].includes(gradeNum);
+  // Use period state: quarters for junior, semesters for senior
+  const [period, setPeriod] = useState<string>(isSenior ? 'sem1' : 'quarter1');
   const subject = section.subjects[0];
   const students = section.students;
   const subjectId = subject.id;
 
+  // Group students by gender (default unassigned to male to keep visibility)
+  const maleStudents = students.filter(s => (s.gender?.toLowerCase?.() === 'male') || !s.gender);
+  const femaleStudents = students.filter(s => s.gender?.toLowerCase?.() === 'female');
+
+  // For filtering assessments, map period to quarter if needed
+  const periodToQuarter = (p: string): string => {
+    if (!isSenior) return String(p);
+    // For senior, map sem1 -> quarter1, sem2 -> quarter3 (or however your data is structured)
+    // Here, we assume sem1 = Q1+Q2, sem2 = Q3+Q4, so default to Q1 and Q3 for display
+    return p === 'sem1' ? 'quarter1' : 'quarter3';
+  };
+  const currentQuarter: string = periodToQuarter(period);
+
   // Use subject.assessments as the source of truth for columns
-  const allAssessments = (subject.assessments || []).filter(a => a.quarter === quarter);
+  const allAssessments = (subject.assessments || []).filter(a => a.quarter === currentQuarter);
   const uniqueWW = allAssessments.filter(a => a.category === 'writtenWork');
   const uniquePT = allAssessments.filter(a => a.category === 'performanceTask');
   const uniqueQE = allAssessments.filter(a => a.category === 'quarterlyExam');
@@ -83,7 +100,7 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
 
   // Calculate class general average for the selected quarter and subject
   const studentQuarterlyGrades = students.map(student => {
-    const qData = getQuarterData(student, subjectId, quarter, subject);
+    const qData = getQuarterData(student, subjectId, String(currentQuarter), subject);
     const qg = parseFloat(qData.QG);
     return isNaN(qg) ? null : qg;
   }).filter(g => g !== null) as number[];
@@ -91,19 +108,30 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
 
   return (
     <div className="bg-white text-black p-2 print:p-2 font-sans">
-      {/* Quarter Selector */}
+      {/* Period Selector */}
       <div className="flex items-center gap-2 mb-2 print:hidden">
-        <label htmlFor="quarter-select" className="font-semibold">Select Quarter:</label>
+        <label htmlFor="period-select" className="font-semibold">
+          {isSenior ? 'Select Semester:' : 'Select Quarter:'}
+        </label>
         <select
-          id="quarter-select"
-          value={quarter}
-          onChange={e => setQuarter(e.target.value as any)}
+          id="period-select"
+          value={period}
+          onChange={e => setPeriod(e.target.value as any)}
           className="border border-gray-300 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 rounded px-2 py-1"
         >
-          <option value="quarter1">Quarter 1</option>
-          <option value="quarter2">Quarter 2</option>
-          <option value="quarter3">Quarter 3</option>
-          <option value="quarter4">Quarter 4</option>
+          {isSenior ? (
+            <>
+              <option value="sem1">1st Semester</option>
+              <option value="sem2">2nd Semester</option>
+            </>
+          ) : (
+            <>
+              <option value="quarter1">Quarter 1</option>
+              <option value="quarter2">Quarter 2</option>
+              <option value="quarter3">Quarter 3</option>
+              <option value="quarter4">Quarter 4</option>
+            </>
+          )}
         </select>
       </div>
       {/* Header Info */}
@@ -222,9 +250,9 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
                 <td key={`empty-male-header-${String(i)}`} className="border-2 border-black px-1 py-1"></td>
               ))}
             </tr>
-            {/* Male students (first half for demo) */}
-            {students.slice(0, Math.ceil(students.length / 2)).map((student, idx) => {
-              const qData = getQuarterData(student, subjectId, quarter, subject);
+            {/* Male students */}
+            {maleStudents.map((student, idx) => {
+              const qData = getQuarterData(student, subjectId, String(currentQuarter), subject);
               const qg = parseFloat(qData.QG);
               return (
                 <tr key={student.id}>
@@ -232,7 +260,7 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
                   <td className="border-2 border-black px-1 py-1 whitespace-nowrap text-left">{student.name}</td>
                   {/* WW scores */}
                   {uniqueWW.map((a, i) => {
-                    const found = student.gradeData[subjectId]?.[quarter]?.writtenWork?.find((w: any) => w.id === a.id);
+                    const found = student.gradeData[subjectId]?.[String(currentQuarter)]?.writtenWork?.find((w: any) => w.id === a.id);
                     return <td key={`ww-score-${String(i)}`} className="border-2 border-black px-1 py-1 text-center">{found ? found.score : '-'}</td>;
                   })}
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.WW_Total}</td>
@@ -240,7 +268,7 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.WW_WS}</td>
                   {/* PT scores */}
                   {uniquePT.map((a, i) => {
-                    const found = student.gradeData[subjectId]?.[quarter]?.performanceTask?.find((p: any) => p.id === a.id);
+                    const found = student.gradeData[subjectId]?.[String(currentQuarter)]?.performanceTask?.find((p: any) => p.id === a.id);
                     return <td key={`pt-score-${String(i)}`} className="border-2 border-black px-1 py-1 text-center">{found ? found.score : '-'}</td>;
                   })}
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.PT_Total}</td>
@@ -248,7 +276,7 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.PT_WS}</td>
                   {/* QE scores */}
                   {uniqueQE.map((a, i) => {
-                    const found = student.gradeData[subjectId]?.[quarter]?.quarterlyExam?.find((q: any) => q.id === a.id);
+                    const found = student.gradeData[subjectId]?.[String(currentQuarter)]?.quarterlyExam?.find((q: any) => q.id === a.id);
                     return <td key={`qe-score-${String(i)}`} className="border-2 border-black px-1 py-1 text-center">{found ? found.score : '-'}</td>;
                   })}
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.QE_Total}</td>
@@ -268,17 +296,17 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
                 <td key={`empty-female-header-${String(i)}`} className="border-2 border-black px-1 py-1"></td>
               ))}
             </tr>
-            {/* Female students (second half for demo) */}
-            {students.slice(Math.ceil(students.length / 2)).map((student, idx) => {
-              const qData = getQuarterData(student, subjectId, quarter, subject);
+            {/* Female students */}
+            {femaleStudents.map((student, idx) => {
+              const qData = getQuarterData(student, subjectId, String(currentQuarter), subject);
               const qg = parseFloat(qData.QG);
               return (
                 <tr key={student.id}>
-                  <td className="border-2 border-black px-1 py-1 text-center">{Math.ceil(students.length / 2) + idx + 1}</td>
+                  <td className="border-2 border-black px-1 py-1 text-center">{maleStudents.length + idx + 1}</td>
                   <td className="border-2 border-black px-1 py-1 whitespace-nowrap text-left">{student.name}</td>
                   {/* WW scores */}
                   {uniqueWW.map((a, i) => {
-                    const found = student.gradeData[subjectId]?.[quarter]?.writtenWork?.find((w: any) => w.id === a.id);
+                    const found = student.gradeData[subjectId]?.[String(currentQuarter)]?.writtenWork?.find((w: any) => w.id === a.id);
                     return <td key={`ww-score-female-${String(i)}`} className="border-2 border-black px-1 py-1 text-center">{found ? found.score : '-'}</td>;
                   })}
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.WW_Total}</td>
@@ -286,7 +314,7 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.WW_WS}</td>
                   {/* PT scores */}
                   {uniquePT.map((a, i) => {
-                    const found = student.gradeData[subjectId]?.[quarter]?.performanceTask?.find((p: any) => p.id === a.id);
+                    const found = student.gradeData[subjectId]?.[String(currentQuarter)]?.performanceTask?.find((p: any) => p.id === a.id);
                     return <td key={`pt-score-female-${String(i)}`} className="border-2 border-black px-1 py-1 text-center">{found ? found.score : '-'}</td>;
                   })}
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.PT_Total}</td>
@@ -294,7 +322,7 @@ export const DepEdClassRecord: React.FC<DepEdClassRecordProps> = ({ section }) =
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.PT_WS}</td>
                   {/* QE scores */}
                   {uniqueQE.map((a, i) => {
-                    const found = student.gradeData[subjectId]?.[quarter]?.quarterlyExam?.find((q: any) => q.id === a.id);
+                    const found = student.gradeData[subjectId]?.[String(currentQuarter)]?.quarterlyExam?.find((q: any) => q.id === a.id);
                     return <td key={`qe-score-female-${String(i)}`} className="border-2 border-black px-1 py-1 text-center">{found ? found.score : '-'}</td>;
                   })}
                   <td className="border-2 border-black px-1 py-1 text-center">{qData.QE_Total}</td>
