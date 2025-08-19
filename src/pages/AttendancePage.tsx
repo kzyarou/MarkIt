@@ -10,9 +10,11 @@ import { saveAttendanceRecord, getAttendanceForSection, AttendanceRecord } from 
 import { listDrafts, saveDraft, deleteDraft } from '@/utils/localDrafts';
 import { useTheme } from 'next-themes';
 import EducHubHeader from '@/components/EducHubHeader';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 export default function AttendancePage() {
   const navigate = useNavigate();
+  const { bottomNavClass } = useBottomNav();
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
@@ -119,7 +121,7 @@ export default function AttendancePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className={`min-h-screen bg-background ${bottomNavClass}`}>
       {loading ? (
         <div className="min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

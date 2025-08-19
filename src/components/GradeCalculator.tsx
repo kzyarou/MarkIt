@@ -8,6 +8,9 @@ import { Plus, Trash2, RefreshCw } from 'lucide-react';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue, SelectLabel, SelectGroup } from './ui/select';
 import { calculateQuarterGrade, getGradeColor, getGradeLevel } from '@/utils/gradeCalculations';
 import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from './ui/badge';
+import { Progress } from './ui/progress';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/accordion';
 
 const SUBJECT_TYPES = [
   { label: 'Languages', value: 'Languages' },
@@ -79,31 +82,52 @@ function getDefaultAssessments(isSenior = false) {
 
 const GradeCalculator: React.FC = () => {
   const { user } = useAuth();
-  const [subject, setSubject] = useState(getDefaultSubject());
-  const [assessments, setAssessments] = useState(getDefaultAssessments());
-  const [currentPeriod, setCurrentPeriod] = useState('quarter1');
+  // Determine initial seniority based on user (if available) to render correct periods immediately
+  const initialUserGradeLevel = user?.role === 'student' && user?.gradeLevel ? user.gradeLevel : undefined;
+  const initialIsSenior = initialUserGradeLevel === '11' || initialUserGradeLevel === '12';
 
-  // Determine if senior (SHS)
-  const isSenior = subject.gradeLevel === '11' || subject.gradeLevel === '12';
-  const periodList = isSenior ? SEMESTERS : QUARTERS;
+  const [subject, setSubject] = useState(() => {
+    const base = getDefaultSubject();
+    return initialUserGradeLevel ? { ...base, gradeLevel: initialUserGradeLevel } : base;
+  });
+  const [assessments, setAssessments] = useState(() => getDefaultAssessments(initialIsSenior));
+  const [currentPeriod, setCurrentPeriod] = useState(initialIsSenior ? 'sem1' : 'quarter1');
 
   // If user is student and has gradeLevel, use it and lock the field
   const userGradeLevel = user?.role === 'student' && user?.gradeLevel ? user.gradeLevel : undefined;
+
+  // Determine if senior (SHS) - prioritize user's grade level over subject grade level
+  const isSenior = userGradeLevel ? 
+    (userGradeLevel === '11' || userGradeLevel === '12') : 
+    (subject.gradeLevel === '11' || subject.gradeLevel === '12');
+  
+  const periodList = isSenior ? SEMESTERS : QUARTERS;
 
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      setSubject(parsed.subject || getDefaultSubject());
-      // If gradeLevel is 11/12, use semesters, else quarters
-      const isSavedSenior = parsed.subject?.gradeLevel === '11' || parsed.subject?.gradeLevel === '12';
-      setAssessments(parsed.assessments || getDefaultAssessments(isSavedSenior));
-      setCurrentPeriod(isSavedSenior ? 'sem1' : 'quarter1');
+      const parsedSubject = parsed.subject || getDefaultSubject();
+      const savedIsSenior = parsedSubject?.gradeLevel === '11' || parsedSubject?.gradeLevel === '12';
+      setSubject(parsedSubject);
+      setAssessments(parsed.assessments || getDefaultAssessments(savedIsSenior));
+      setCurrentPeriod(savedIsSenior ? 'sem1' : 'quarter1');
     } else if (userGradeLevel) {
+      const senior = userGradeLevel === '11' || userGradeLevel === '12';
       setSubject(prev => ({ ...prev, gradeLevel: userGradeLevel }));
-      setAssessments(getDefaultAssessments(userGradeLevel === '11' || userGradeLevel === '12'));
-      setCurrentPeriod(userGradeLevel === '11' || userGradeLevel === '12' ? 'sem1' : 'quarter1');
+      setAssessments(getDefaultAssessments(senior));
+      setCurrentPeriod(senior ? 'sem1' : 'quarter1');
+    }
+  }, [userGradeLevel]);
+
+  // Update assessments and period when userGradeLevel changes
+  useEffect(() => {
+    if (userGradeLevel) {
+      const senior = userGradeLevel === '11' || userGradeLevel === '12';
+      // If switching seniority mode, reset assessments accordingly
+      setAssessments(getDefaultAssessments(senior));
+      setCurrentPeriod(senior ? 'sem1' : 'quarter1');
     }
   }, [userGradeLevel]);
 
@@ -190,27 +214,24 @@ const GradeCalculator: React.FC = () => {
     }
   };
 
-  // Scroll-to-refresh
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        refreshCalculator();
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [userGradeLevel]);
+  // Removed problematic scroll-to-refresh that was clearing user inputs
 
   return (
-    <div className="max-w-2xl mx-auto w-full">
+    <div className="max-w-3xl mx-auto w-full">
       <div className="flex justify-end mb-2">
         <Button variant="outline" size="sm" onClick={refreshCalculator} title="Refresh Calculator">
           <RefreshCw className="w-4 h-4 mr-1" /> Refresh
         </Button>
       </div>
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Subject & Weights</CardTitle>
+        <CardHeader className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <CardTitle>Subject & Weights</CardTitle>
+            {user?.role === 'student' && (
+              <Badge variant="secondary" className="ml-2">Student Mode</Badge>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground">Fill in your subject and weights. Your inputs auto-save.</div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -276,7 +297,12 @@ const GradeCalculator: React.FC = () => {
               />
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">Weights must total 100%</div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Weights must total 100%</span>
+            <Badge variant={(Number(subject.writtenWorkWeight) + Number(subject.performanceTaskWeight) + Number(subject.quarterlyExamWeight)) === 100 ? 'secondary' : 'destructive'}>
+              Total: {Number(subject.writtenWorkWeight) + Number(subject.performanceTaskWeight) + Number(subject.quarterlyExamWeight)}%
+            </Badge>
+          </div>
         </CardContent>
       </Card>
 
@@ -285,88 +311,110 @@ const GradeCalculator: React.FC = () => {
           <CardTitle>Grade Entry</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={currentPeriod} onValueChange={setCurrentPeriod} className="mb-4">
-            <TabsList className={`grid w-full grid-cols-${periodList.length}`}>
-              {periodList.map(p => (
-                <TabsTrigger key={p.key} value={p.key}>{p.label}</TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-          {CATEGORY_KEYS.map(cat => (
-            <Card key={cat.key} className="mb-4">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  {cat.label}
-                  <Button size="sm" onClick={() => addAssessment(cat.key)}>
-                    <Plus className="w-4 h-4 mr-1" /> Add
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {assessments[currentPeriod][cat.key].length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No assessments yet. Click Add to get started.</p>
-                ) : (
-                  assessments[currentPeriod][cat.key].map((a: any, idx: number) => (
-                    <div key={a.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end p-3 border rounded">
-                      <div>
-                        <Label>Name</Label>
-                        <Input
-                          value={a.name}
-                          onChange={e => updateAssessment(cat.key, idx, 'name', e.target.value)}
-                          placeholder="Quiz 1, Project A, etc."
-                        />
+          <div className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 rounded-md border mb-4">
+            <Tabs value={currentPeriod} onValueChange={setCurrentPeriod}>
+              <TabsList className={`grid w-full grid-cols-${periodList.length}`}>
+                {periodList.map(p => (
+                  <TabsTrigger key={p.key} value={p.key}>{p.label}</TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+          <Accordion type="single" collapsible className="w-full mb-4">
+            {CATEGORY_KEYS.map(cat => {
+              const entries = assessments[currentPeriod][cat.key];
+              const totalEarned = entries.reduce((sum: number, a: any) => sum + (Number(a.score) || 0), 0);
+              const totalPoints = entries.reduce((sum: number, a: any) => sum + (Number(a.totalPoints) || 0), 0);
+              const progress = totalPoints > 0 ? Math.min(100, Math.round((totalEarned / totalPoints) * 100)) : 0;
+              return (
+                <AccordionItem key={cat.key} value={cat.key}>
+                  <AccordionTrigger>
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <div className="font-medium">{cat.label}</div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{entries.length} items</Badge>
+                        <Badge variant="secondary">{progress}%</Badge>
                       </div>
-                      <div>
-                        <Label>Score</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={a.score === 0 ? '' : a.score}
-                          onChange={e => updateAssessment(cat.key, idx, 'score', e.target.value)}
-                          placeholder="Score"
-                        />
-                      </div>
-                      <div>
-                        <Label>Total Points</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={a.totalPoints === 0 ? '' : a.totalPoints}
-                          onChange={e => updateAssessment(cat.key, idx, 'totalPoints', e.target.value)}
-                          placeholder="Total Points"
-                        />
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => removeAssessment(cat.key, idx)} className="text-red-600 hover:text-red-700">
-                        <Trash2 className="w-4 h-4" />
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="mb-3">
+                      <Progress value={progress} className="h-2" />
+                    </div>
+                    <div className="flex justify-end mb-2">
+                      <Button size="sm" onClick={() => addAssessment(cat.key)}>
+                        <Plus className="w-4 h-4 mr-1" /> Add {cat.label}
                       </Button>
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                    {entries.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">No assessments yet. Click Add to get started.</p>
+                    ) : (
+                      entries.map((a: any, idx: number) => (
+                        <div key={a.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end p-3 border rounded mb-2">
+                          <div>
+                            <Label>Name</Label>
+                            <Input
+                              value={a.name}
+                              onChange={e => updateAssessment(cat.key, idx, 'name', e.target.value)}
+                              placeholder="Quiz 1, Project A, etc."
+                            />
+                          </div>
+                          <div>
+                            <Label>Score</Label>
+                            <Input
+                              type="number"
+                              min={0}
+                              value={a.score === 0 ? '' : a.score}
+                              onChange={e => updateAssessment(cat.key, idx, 'score', e.target.value)}
+                              placeholder="Score"
+                            />
+                          </div>
+                          <div>
+                            <Label>Total Points</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={a.totalPoints === 0 ? '' : a.totalPoints}
+                              onChange={e => updateAssessment(cat.key, idx, 'totalPoints', e.target.value)}
+                              placeholder="Total Points"
+                            />
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => removeAssessment(cat.key, idx)} className="text-red-600 hover:text-red-700">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isSenior ? 'Semester Summary' : 'Quarter Summary'}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>{isSenior ? 'Semester Summary' : 'Quarter Summary'}</CardTitle>
+            <Badge variant="outline">{periodList.find(p => p.key === currentPeriod)?.label}</Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <div className="text-center">
+            <div className="text-center p-3 rounded border">
               <p className="text-sm text-gray-600">Written Work</p>
               <p className="text-2xl font-bold">{periodResult.writtenWorkPercentage.toFixed(1)}%</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-3 rounded border">
               <p className="text-sm text-gray-600">Performance Tasks</p>
               <p className="text-2xl font-bold">{periodResult.performanceTaskPercentage.toFixed(1)}%</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-3 rounded border">
               <p className="text-sm text-gray-600">Quarterly Exam</p>
               <p className="text-2xl font-bold">{periodResult.quarterlyExamPercentage.toFixed(1)}%</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-3 rounded border">
               <p className="text-sm text-gray-600">Initial Grade</p>
               <p className="text-2xl font-bold">{periodResult.initialGrade.toFixed(2)}</p>
             </div>

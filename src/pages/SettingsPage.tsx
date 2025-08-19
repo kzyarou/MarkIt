@@ -8,13 +8,15 @@ import { useTheme } from "next-themes";
 import { Switch } from '@/components/ui/switch';
 import { Dialog as FeedbackDialog, DialogContent as FeedbackDialogContent, DialogHeader as FeedbackDialogHeader, DialogTitle as FeedbackDialogTitle, DialogFooter as FeedbackDialogFooter } from '@/components/ui/dialog';
 import { MessageCircle, Sun, Moon, Trash2, HelpCircle, FileText, Shield, LogOut, ShieldCheck } from 'lucide-react';
-import { listDrafts, deleteDraft } from '@/utils/localDrafts';
+import { listDrafts, deleteDraft, DraftType } from '@/utils/localDrafts';
 import EducHubHeader from '@/components/EducHubHeader';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 const BLUE_CLASS = 'blue-mode';
 
 const SettingsPage = () => {
   const { logout, deleteUserProfileWithPasswordOrGoogle, isLoading, user } = useAuth();
+  const { bottomNavClass } = useBottomNav();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -65,9 +67,24 @@ const SettingsPage = () => {
   const hubColor = isDark ? '#52677D' : '#2563eb';
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} pb-32`}>
+    <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
       <EducHubHeader subtitle="Settings" />
       <main className="max-w-md mx-auto px-2 py-4">
+        {user?.role === 'admin' && (
+          <div className="bg-card rounded-xl shadow p-4 mb-6">
+            <div className="text-xs font-semibold text-muted-foreground mb-2">Admin</div>
+            <div className="space-y-2">
+              <button onClick={() => navigate('/')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 17l9 4 9-4"/><path d="M3 12l9 4 9-4"/></svg>
+                <span className="font-medium text-foreground flex-1 text-left">Sections</span>
+              </button>
+              <button onClick={() => navigate('/reports')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h18v18H3z"/><path d="M7 7h10v10H7z"/></svg>
+                <span className="font-medium text-foreground flex-1 text-left">Reports</span>
+              </button>
+            </div>
+          </div>
+        )}
         {/* General Section */}
         <div className="bg-card rounded-xl shadow p-4 mb-6">
           <div className="text-xs font-semibold text-muted-foreground mb-2">General</div>
@@ -274,7 +291,7 @@ const SettingsPage = () => {
                   if (!user) return;
                   setClearingCache(true);
                   // Clear all section and attendance drafts for this user
-                  for (const type of ['section', 'attendance']) {
+                  for (const type of ['section', 'attendance'] as DraftType[]) {
                     const drafts = listDrafts(user.id, type);
                     for (const draft of drafts) {
                       deleteDraft(user.id, type, draft.id);

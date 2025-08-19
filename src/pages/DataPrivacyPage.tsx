@@ -1,12 +1,14 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useBottomNav } from '@/hooks/use-mobile';
 import { ShieldCheck } from 'lucide-react';
 
 export default function DataPrivacyPage() {
   const navigate = useNavigate();
+  const { bottomNavClass } = useBottomNav();
   return (
-    <div className="min-h-screen bg-background pb-20 px-4">
+    <div className={`min-h-screen bg-background px-4 ${bottomNavClass}`}>
       <div className="pt-6 pb-2 max-w-2xl mx-auto">
         <Button variant="ghost" className="mb-4" onClick={() => navigate(-1)}>
           ← Back

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Remove the old steps object and branching logic
 // const steps = {
@@ -411,11 +412,39 @@ export default function AuthPage() {
   // Splash screen with transition
   if (showSplash) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#2563eb]">
-        <div className="flex flex-col items-center">
-          <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-32 h-32 mb-4 animate-float filter invert brightness-200" />
-          <span className="text-white text-4xl font-bold tracking-widest">EducHub</span>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden">
+        {/* Ambient Particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <motion.span
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-blue-400/30 dark:bg-white/20"
+             style={{ left: `${(i * 9) % 100}%`, top: `${(i * 13) % 100}%` }}
+              animate={{ y: [0, -12, 0], opacity: [0.3, 0.9, 0.3] }}
+              transition={{ duration: 3.5 + (i % 5), repeat: Infinity, ease: 'easeInOut', delay: i * 0.12 }}
+            />
+          ))}
         </div>
+        {/* Rotating Blobs */}
+        <motion.div
+          animate={{ rotate: 360, scale: [1, 1.08, 1] }}
+          transition={{ duration: 26, repeat: Infinity, ease: 'linear' }}
+          className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400/30 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ rotate: -360, scale: [1.1, 1, 1.1] }}
+          transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-400/30 rounded-full blur-3xl"
+        />
+                  <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col items-center relative z-10"
+          >
+            <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-32 h-32 mb-4 animate-float filter invert brightness-200" />
+            <span className="text-blue-900 dark:text-white text-4xl font-bold tracking-widest drop-shadow">EducHub</span>
+          </motion.div>
       </div>
     );
   }
@@ -447,7 +476,7 @@ export default function AuthPage() {
         {/* Bottom branding */}
         <div className="flex flex-col items-center pb-6">
           <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-6 h-6 mb-1 filter invert brightness-200" />
-          <span className="text-gray-500 font-semibold text-lg">EducHub</span>
+          <span className="text-white font-semibold text-lg drop-shadow">EducHub</span>
         </div>
       </div>
     );
@@ -474,29 +503,62 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#2563eb] relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden">
+      {/* Ambient Particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {Array.from({ length: 18 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute w-2 h-2 rounded-full bg-blue-400/30 dark:bg-white/20"
+             style={{ left: `${(i * 11) % 100}%`, top: `${(i * 7) % 100}%` }}
+            animate={{ y: [0, -10, 0], opacity: [0.35, 0.85, 0.35] }}
+            transition={{ duration: 4 + (i % 5), repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 }}
+          />
+        ))}
+      </div>
+      {/* Rotating Blobs */}
+      <motion.div
+        animate={{ rotate: 360, scale: [1, 1.06, 1] }}
+        transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+        className="absolute -top-56 -right-48 w-[28rem] h-[28rem] bg-blue-300/20 dark:bg-slate-700/30 rounded-full blur-3xl"
+      />
+      <motion.div
+        animate={{ rotate: -360, scale: [1.1, 1, 1.1] }}
+        transition={{ duration: 34, repeat: Infinity, ease: 'linear' }}
+        className="absolute -bottom-56 -left-48 w-[28rem] h-[28rem] bg-indigo-300/20 dark:bg-slate-800/30 rounded-full blur-3xl"
+      />
       <div
-        className={`absolute inset-0 flex items-center justify-center bg-[#2336a7] z-10 transition-all duration-500 ease-in-out ${splashTransition}`}
+        className={`absolute inset-0 flex items-center justify-center bg-blue-200/50 dark:bg-slate-800/60 z-10 transition-all duration-500 ease-in-out ${splashTransition}`}
         style={{ willChange: 'opacity, transform' }}
       >
-        <div className="flex flex-col items-center">
+        <motion.div
+          initial={{ opacity: 1, scale: 1 }}
+          animate={{ opacity: 0.9, scale: 1.02 }}
+          transition={{ duration: 0.5, repeat: Infinity, repeatType: 'reverse' }}
+          className="flex flex-col items-center"
+        >
           <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-32 h-32 mb-4 animate-float filter invert brightness-200" />
           <span className="text-white text-4xl font-bold tracking-widest">EducHub</span>
-        </div>
+        </motion.div>
       </div>
-      {/* Logo and EduHub text at the top, but higher and animated */}
-      <div className="flex flex-col items-center pt-16 pb-4">
+      {/* Logo and EduHub text at the top */}
+      <div className="flex flex-col items-center pt-16 pb-4 relative z-10">
         <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-28 h-28 mb-3 animate-float filter invert brightness-200" />
-        <span className="text-white text-5xl font-extrabold tracking-widest mb-1 drop-shadow-lg">EducHub</span>
-        <span className="text-base text-gray-100 font-medium text-center drop-shadow">Smart Tools for Smarter Schools</span>
+        <span className="text-blue-700 dark:text-white text-5xl font-extrabold tracking-widest mb-1 drop-shadow">EducHub</span>
+        <span className="text-base text-blue-600 dark:text-slate-200 font-medium text-center drop-shadow">Smart Tools for Smarter Schools</span>
       </div>
       {/* Glassmorphism card for login/signup */}
       <div className={`flex-1 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${cardTransition}`}
         style={{ willChange: 'opacity, transform' }}>
-        <div className="w-full max-w-md py-12 px-8 flex flex-col gap-10">
-          <div className="text-center mb-2">
-            <span className="text-2xl font-bold text-white drop-shadow">{mode === 'login' ? 'Login to your Account' : 'Create your Account'}</span>
-          </div>
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="w-full max-w-md py-12 px-8 flex flex-col gap-10 relative z-10 -mt-4"
+        >
+                      <div className="text-center mb-2">
+              <span className="text-2xl font-bold text-blue-900 dark:text-white drop-shadow">{mode === 'login' ? 'Login in to your account' : 'Create your Account'}</span>
+            </div>
           {mode === 'login' ? (
             <form className="flex flex-col gap-4" onSubmit={handleLogin}>
               <input
@@ -528,7 +590,7 @@ export default function AuthPage() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-green-500 to-green-400 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-green-600 hover:to-green-500 transition text-lg tracking-wide"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-blue-700 hover:to-blue-600 transition text-lg tracking-wide"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing In...' : 'Sign in'}
@@ -592,17 +654,17 @@ export default function AuthPage() {
             </form>
           )}
           {/* Terms of Agreement Notice */}
-          <div className="text-center text-xs text-black my-2">
+          <div className="text-center text-xs text-slate-600 dark:text-slate-300 my-2">
             By signing in or creating an account, you agree to our
-            <a href="/terms" className="text-white hover:underline mx-1" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+            <a href="/terms" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Terms of Service</a>
             and
-            <a href="/privacy" className="text-white hover:underline mx-1" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+            <a href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
           </div>
-          <div className="text-center text-base text-black mt-4">
+          <div className="text-center text-base text-slate-700 dark:text-slate-200 mt-4">
             {mode === 'login' ? (
               <>Don&apos;t have an account?{' '}
                 <span
-                  className="ml-2 text-white font-bold underline cursor-pointer hover:opacity-80 transition"
+                  className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
                   onClick={() => setMode('signup')}
                   role="button"
                   tabIndex={0}
@@ -613,7 +675,7 @@ export default function AuthPage() {
             ) : (
               <>Already have an account?{' '}
                 <span
-                  className="ml-2 text-white font-bold underline cursor-pointer hover:opacity-80 transition"
+                  className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
                   onClick={() => setMode('login')}
                   role="button"
                   tabIndex={0}
@@ -623,7 +685,7 @@ export default function AuthPage() {
               </>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

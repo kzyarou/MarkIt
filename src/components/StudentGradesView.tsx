@@ -7,6 +7,7 @@ import { Grade } from '@/types/grading';
 import { GradesService, StudentUserService } from '@/services/gradesService';
 import { getGradeColor, getGradeLevel } from '@/utils/gradeCalculations';
 import { useLRN } from '@/hooks/useLRN';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 interface StudentGradesViewProps {
   userId: string;
@@ -20,7 +21,9 @@ export function StudentGradesView({ userId }: StudentGradesViewProps) {
   const [sectionError, setSectionError] = useState<string | null>(null);
   const [activeSectionIds, setActiveSectionIds] = useState<string[]>([]);
   const [forceSyncing, setForceSyncing] = useState(false);
+  const [sectionInfo, setSectionInfo] = useState<{ gradeLevel: string; classification?: string } | null>(null);
   const lrn = useLRN();
+  const { bottomNavClass } = useBottomNav();
 
   // Debug logging
   useEffect(() => {
@@ -28,12 +31,13 @@ export function StudentGradesView({ userId }: StudentGradesViewProps) {
     console.log('[StudentGradesView] lrn:', lrn);
     console.log('[StudentGradesView] activeSectionIds:', activeSectionIds);
     console.log('[StudentGradesView] grades:', grades);
+    console.log('[StudentGradesView] sectionInfo:', sectionInfo);
     if (grades.length > 0) {
       grades.forEach(g => {
         console.log(`[StudentGradesView] grade: subject=${g.subject}, sectionId=${g.sectionId}, hidden=${g.hidden}, score=${g.score}`);
       });
     }
-  }, [userId, lrn, activeSectionIds, grades]);
+  }, [userId, lrn, activeSectionIds, grades, sectionInfo]);
 
   const loadGrades = async () => {
     setLoading(true);
@@ -55,8 +59,17 @@ export function StudentGradesView({ userId }: StudentGradesViewProps) {
       try {
         const res = await StudentUserService.getUserSections(lrn);
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-          setSectionId(res.data[0].sectionId);
+          const sectionData = res.data[0];
+          setSectionId(sectionData.sectionId);
           setActiveSectionIds(res.data.map((conn: any) => conn.sectionId));
+          
+          // Extract section info for grade level determination
+          if (sectionData.gradeLevel) {
+            setSectionInfo({
+              gradeLevel: sectionData.gradeLevel,
+              classification: sectionData.classification
+            });
+          }
         } else {
           setSectionId(null);
           setActiveSectionIds([]);
@@ -226,7 +239,7 @@ export function StudentGradesView({ userId }: StudentGradesViewProps) {
   }, {} as Record<string, Grade[]>);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${bottomNavClass}`}>
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Your Grades</h2>
         <Button onClick={forceSyncGrades} size="sm" variant="outline" disabled={forceSyncing}>
@@ -239,6 +252,25 @@ export function StudentGradesView({ userId }: StudentGradesViewProps) {
         const averageGrade = subjectGrades.length > 0
           ? Math.round(subjectGrades.reduce((sum, grade) => sum + grade.score, 0) / subjectGrades.length)
           : 0;
+
+        // Determine if student is in senior high school
+        const isSenior = sectionInfo && (
+          sectionInfo.classification === 'senior' || 
+          ['11', '12'].includes(sectionInfo.gradeLevel)
+        );
+
+        // Define periods based on grade level
+        const periods = isSenior 
+          ? [
+              { key: 1, label: '1st Semester', quarters: [1, 2] },
+              { key: 2, label: '2nd Semester', quarters: [3, 4] }
+            ]
+          : [
+              { key: 1, label: 'Quarter 1', quarters: [1] },
+              { key: 2, label: 'Quarter 2', quarters: [2] },
+              { key: 3, label: 'Quarter 3', quarters: [3] },
+              { key: 4, label: 'Quarter 4', quarters: [4] }
+            ];
 
         return (
           <Card key={subject}>
@@ -256,18 +288,41 @@ export function StudentGradesView({ userId }: StudentGradesViewProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(quarter => {
-                  const quarterGrade = subjectGrades.find(g => g.quarter === quarter);
+              <div className={`grid grid-cols-1 md:grid-cols-${periods.length} gap-4`}>
+                {periods.map(period => {
+                  // For semesters, calculate the average of the two quarters
+                  // For quarters, just show the single quarter grade
+                  let periodGrade: number | null = null;
+                  let periodLabel = period.label;
+                  
+                  if (isSenior) {
+                    // Semester: average of two quarters
+                    const quarterGrades = period.quarters.map(q => 
+                      subjectGrades.find(g => g.quarter === q)?.score
+                    ).filter(score => score !== undefined) as number[];
+                    
+                    if (quarterGrades.length > 0) {
+                      periodGrade = Math.round(quarterGrades.reduce((sum, score) => sum + score, 0) / quarterGrades.length);
+                    }
+                  } else {
+                    // Quarter: single grade
+                    const quarterGrade = subjectGrades.find(g => g.quarter === period.quarters[0]);
+                    periodGrade = quarterGrade?.score || null;
+                  }
                   
                   return (
-                    <div key={quarter} className="text-center p-3 border rounded">
-                      <p className="text-sm text-gray-600 mb-1">Quarter {quarter}</p>
+                    <div key={period.key} className="text-center p-3 border rounded">
+                      <p className="text-sm text-gray-600 mb-1">{periodLabel}</p>
                       <p className={`text-xl font-semibold ${
-                        quarterGrade ? getGradeColor(quarterGrade.score) : 'text-gray-400'
+                        periodGrade !== null ? getGradeColor(periodGrade) : 'text-gray-400'
                       }`}>
-                        {quarterGrade ? quarterGrade.score : '--'}
+                        {periodGrade !== null ? periodGrade : '--'}
                       </p>
+                      {isSenior && period.quarters.length > 1 && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Q{period.quarters[0]}, Q{period.quarters[1]}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

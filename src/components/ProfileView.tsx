@@ -46,6 +46,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     });
   }, [profile]);
 
+  const isAdmin = profile?.email === 'zacharyrapiz@gmail.com' || profile?.role === 'admin';
+  const displayedRole = isAdmin ? 'admin' : (profile?.role === 'teacher' ? 'developer' : (profile?.role || ''));
   const handle = profile?.email
     ? `@${profile.email.split('@')[0]}`
     : profile?.name
@@ -98,16 +100,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <div className="flex items-center gap-4">
               <Avatar className="h-14 w-14">
                 <AvatarImage src={profile?.avatarUrl || ''} alt={profile?.name || ''} />
-                <AvatarFallback>{(profile?.name || '?').slice(0,2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className={isAdmin ? 'bg-red-600 text-white font-bold' : ''}>{isAdmin ? 'DEV' : (profile?.name || '?').slice(0,2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-2xl font-bold">{profile?.name || '—'}</h2>
+                  <h2 className={`text-2xl font-bold ${isAdmin ? 'text-red-700 dark:text-red-300' : ''}`}>{profile?.name || '—'}</h2>
                   {profile?.role && (
-                    <Badge variant="secondary" className="capitalize">{profile.role}</Badge>
+                    <Badge variant={isAdmin ? 'destructive' : 'secondary'} className="capitalize">{displayedRole}</Badge>
                   )}
                 </div>
-                <p className="text-muted-foreground">{handle}</p>
+                <p className={`text-muted-foreground ${isAdmin ? 'text-red-700/70 dark:text-red-300/80' : ''}`}>{handle}</p>
               </div>
             </div>
             {editable && !isEditing && (
@@ -121,7 +123,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           ) : (
             <div className="mt-6 space-y-4">
               <div className="flex gap-2 flex-wrap items-center">
-                <Badge variant="outline" className="capitalize">{editProfile.role}</Badge>
+                <Badge variant="outline" className="capitalize">{editProfile.role === 'teacher' ? 'developer' : editProfile.role}</Badge>
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -175,7 +177,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Email:</span> <span>{profile?.email || 'Not set'}</span></div>
-            <div className="flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Role:</span> <span className="capitalize">{profile?.role || 'Not set'}</span></div>
+            <div className="flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Role:</span> <span className="capitalize">{displayedRole || 'Not set'}</span></div>
             <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /><span className="font-medium">Last Login:</span> <span>{profile?.lastLogin || 'Not set'}</span></div>
           </CardContent>
         </Card>
@@ -197,7 +199,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </Card>
         )}
 
-        {profile?.role === 'teacher' && (
+        {profile?.role === 'teacher' && false && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-blue-500" /> Teacher Details</CardTitle>

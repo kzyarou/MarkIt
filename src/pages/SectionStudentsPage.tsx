@@ -9,10 +9,12 @@ import { getSections, saveSection } from '@/services/gradesService';
 import { loadDraft, saveDraft } from '@/utils/localDrafts';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBottomNav } from '@/hooks/use-mobile';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export default function SectionStudentsPage() {
   const { sectionId } = useParams<{ sectionId: string }>();
+  const { bottomNavClass } = useBottomNav();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -137,7 +139,7 @@ export default function SectionStudentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className={`min-h-screen bg-background ${bottomNavClass}`}>
       <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">

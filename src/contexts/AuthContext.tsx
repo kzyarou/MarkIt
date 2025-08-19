@@ -8,7 +8,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'teacher' | 'student' | 'parent';
+  role: 'teacher' | 'student' | 'parent' | 'admin';
   lrn?: string;
   avatarUrl?: string;
   bio?: string;
@@ -29,7 +29,7 @@ interface AuthContextType {
     email: string;
     password: string;
     name: string;
-    role: 'teacher' | 'student' | 'parent';
+    role: 'teacher' | 'student' | 'parent' | 'admin';
     lrn?: string;
     avatarUrl?: string;
     bio?: string;
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
         name: userProfile?.name || firebaseUser.displayName || '',
-        role: userProfile?.role || 'student',
+        role: (firebaseUser.email === 'zacharyrapiz@gmail.com') ? 'admin' : (userProfile?.role || 'student'),
         lrn: userProfile?.lrn || null,
         avatarUrl: userProfile?.avatarUrl || '',
         bio: userProfile?.bio || '',
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
         name: userProfile?.name || firebaseUser.displayName || '',
-        role: userProfile?.role || 'student',
+        role: (firebaseUser.email === 'zacharyrapiz@gmail.com') ? 'admin' : (userProfile?.role || 'student'),
         lrn: userProfile?.lrn || null,
         avatarUrl: userProfile?.avatarUrl || '',
         bio: userProfile?.bio || '',
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string;
     password: string;
     name: string;
-    role: 'teacher' | 'student' | 'parent';
+    role: 'teacher' | 'student' | 'parent' | 'admin';
     lrn?: string;
     avatarUrl?: string;
     bio?: string;

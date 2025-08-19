@@ -125,25 +125,45 @@ export function getTransmutationTable(gradeLevel: string, year?: number, depedOr
 // --- Category Percentage Calculation ---
 export function calculateCategoryPercentage(scores: { score: number; totalPoints: number }[]): number {
   if (scores.length === 0) return 0;
-  const totalScores = scores.reduce((sum, score) => sum + score.score, 0);
-  const totalPossible = scores.reduce((sum, score) => sum + score.totalPoints, 0);
+  
+  // Filter out entries with 0 totalPoints to avoid division by zero
+  const validScores = scores.filter(score => score.totalPoints > 0);
+  if (validScores.length === 0) return 0;
+  
+  const totalScores = validScores.reduce((sum, score) => sum + (score.score || 0), 0);
+  const totalPossible = validScores.reduce((sum, score) => sum + (score.totalPoints || 0), 0);
+  
   if (totalPossible === 0) return 0;
   return (totalScores / totalPossible) * 100;
 }
 
 // --- Main Transmutation Function ---
 export function transmuteGrade(initialGrade: number, gradeLevel: string, year?: number, depedOrder?: DepEdOrder): number {
+  // If initial grade is 0 or undefined, return 0 (no grade yet)
+  if (!initialGrade || initialGrade === 0) return 0;
+  
   const table = getTransmutationTable(gradeLevel, year, depedOrder);
   for (const range of table) {
     if (initialGrade >= range.min && initialGrade <= range.max) {
       return range.grade;
     }
   }
-  return 75; // Default minimum grade
+  return 75; // Default minimum grade for valid scores
 }
 
 // --- Helper: Get subject weight profile ---
 export function getDepEdWeights(subject: Subject, gradeLevel: string, year?: number): { WW: number, PT: number, QA: number, depedOrder: string } {
+  // If the subject has custom weights defined, use those
+  if (subject.writtenWorkWeight && subject.performanceTaskWeight && subject.quarterlyExamWeight) {
+    return { 
+      WW: subject.writtenWorkWeight, 
+      PT: subject.performanceTaskWeight, 
+      QA: subject.quarterlyExamWeight, 
+      depedOrder: 'Custom Subject Weights' 
+    };
+  }
+  
+  // Otherwise, fall back to DepEd standard weights
   // SHS (Grades 11-12, 2025+)
   if ((gradeLevel === '11' || gradeLevel === '12') && year && year >= 2025) {
     // Use subject.track or type if available
@@ -175,15 +195,54 @@ export function calculateQuarterGrade(
 ): QuarterResult & { depedOrderUsed: string } {
   // Get correct weights
   const { WW, PT, QA, depedOrder: depedOrderUsed } = getDepEdWeights(subject, gradeLevel, year);
+  
+  // Debug logging
+  console.log('Grade calculation debug:', {
+    subject: subject.name,
+    gradeLevel,
+    weights: { WW, PT, QA },
+    quarterScores,
+    depedOrderUsed
+  });
+  
+  // Calculate percentages for each category
   const writtenWorkPercentage = calculateCategoryPercentage(quarterScores.writtenWork);
   const performanceTaskPercentage = calculateCategoryPercentage(quarterScores.performanceTask);
   const quarterlyExamPercentage = calculateCategoryPercentage(quarterScores.quarterlyExam);
+
+  console.log('Category percentages:', {
+    writtenWork: writtenWorkPercentage,
+    performanceTask: performanceTaskPercentage,
+    quarterlyExam: quarterlyExamPercentage
+  });
+
+  // Check if we have any valid scores
+  const hasValidScores = writtenWorkPercentage > 0 || performanceTaskPercentage > 0 || quarterlyExamPercentage > 0;
+  
+  if (!hasValidScores) {
+    console.log('No valid scores found, returning 0');
+    return {
+      writtenWorkPercentage: 0,
+      performanceTaskPercentage: 0,
+      quarterlyExamPercentage: 0,
+      initialGrade: 0,
+      transmutedGrade: 0,
+      depedOrderUsed: depedOrderUsed
+    };
+  }
 
   // Compute initial grade using correct weights
   let initialGrade =
     (writtenWorkPercentage * WW / 100) +
     (performanceTaskPercentage * PT / 100) +
     (quarterlyExamPercentage * QA / 100);
+
+  console.log('Initial grade calculation:', {
+    writtenWork: writtenWorkPercentage * WW / 100,
+    performanceTask: performanceTaskPercentage * PT / 100,
+    quarterlyExam: quarterlyExamPercentage * QA / 100,
+    total: initialGrade
+  });
 
   // Allow override for special DepEd orders
   let depedOrderFinal = depedOrderUsed;
@@ -198,6 +257,8 @@ export function calculateQuarterGrade(
   }
 
   const transmutedGrade = transmuteGrade(initialGrade, gradeLevel, year, depedOrder);
+  
+  console.log('Final result:', { initialGrade, transmutedGrade, depedOrderFinal });
 
   return {
     writtenWorkPercentage,

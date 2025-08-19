@@ -1,34 +1,43 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { ThemeProvider } from 'next-themes';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { DraftsProvider } from '@/contexts/DraftsContext';
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { useBottomNav } from '@/hooks/use-mobile';
+import { UpdateNotification } from '@/components/UpdateNotification';
 import ScrollToTop from "@/components/ScrollToTop";
+import { AppSidebarLayout } from "@/components/AppSidebar";
 import Dashboard from "./pages/Dashboard";
 import CreateSection from "./pages/CreateSection";
 import SectionDetailsPage from "./pages/SectionDetailsPage";
 import SectionStudentsPage from "./pages/SectionStudentsPage";
 import StudentSubjectsPage from "./pages/StudentSubjectsPage";
-import ReportsPage from "./pages/ReportsPage";
-import SearchPage from "./pages/SearchPage";
-import AttendancePage from "./pages/AttendancePage";
+import ReportsPage from './pages/ReportsPage';
+import SearchPage from './pages/SearchPage';
+import AttendancePage from './pages/AttendancePage';
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
-import SettingsPage from "./pages/SettingsPage";
-import { ThemeProvider } from "next-themes";
-import SubjectsECRPage from "./pages/SubjectsECRPage";
-import SubjectECRDetailPage from "./pages/SubjectECRDetailPage";
+import SettingsPage from './pages/SettingsPage';
+import SubjectsECRPage from './pages/SubjectsECRPage';
+import SubjectECRDetailPage from './pages/SubjectECRDetailPage';
 import FAQPage from './pages/FAQPage';
 import DataPrivacyPage from './pages/DataPrivacyPage';
 import TermsPage from './pages/TermsPage';
 import GradeCalculatorPage from './pages/GradeCalculatorPage';
+import AdminPage from './pages/AdminPage';
+import { getSections } from '@/services/gradesService';
+import { loadDraft } from '@/utils/localDrafts';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { AppSidebarLayout } from "@/components/AppSidebar";
-// import UserProfilePage from "./pages/UserProfilePage";
+import { Capacitor } from '@capacitor/core';
+import { usePresence } from '@/hooks/usePresence';
+import EnforcementGate from '@/components/EnforcementGate';
 
 const queryClient = new QueryClient();
 
@@ -54,6 +63,9 @@ function AppRoutes() {
   const { user, isLoading } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
+
+  // Presence updates for logged-in users
+  usePresence();
 
   if (isLoading) {
     return (
@@ -100,6 +112,11 @@ function AppRoutes() {
       <Route path="/reports" element={
         <ProtectedRoute>
           <ReportsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          {user?.role === 'admin' ? <AdminPage /> : <Navigate to="/" replace />}
         </ProtectedRoute>
       } />
       {/* Add calculator route for students only */}
@@ -163,6 +180,7 @@ function AppRoutes() {
   return (
     <div className="relative">
       {routes}
+      {Boolean(user) && <EnforcementGate />}
       {showBottomNav && <BottomNavigation />}
     </div>
   );
@@ -178,6 +196,7 @@ const App = () => (
           <AuthProvider>
             <ScrollToTop />
             <AppRoutes />
+            <UpdateNotification />
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

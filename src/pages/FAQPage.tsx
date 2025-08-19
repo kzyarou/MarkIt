@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useBottomNav } from '@/hooks/use-mobile';
 import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 
 const FAQS = [
@@ -143,6 +144,7 @@ const FAQS = [
 
 export default function FAQPage() {
   const navigate = useNavigate();
+  const { bottomNavClass } = useBottomNav();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggle = (idx: number) => {
@@ -150,7 +152,7 @@ export default function FAQPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 px-4">
+    <div className={`min-h-screen bg-background px-4 ${bottomNavClass}`}>
       <div className="pt-6 pb-2 max-w-2xl mx-auto">
         <Button variant="ghost" className="mb-4" onClick={() => navigate(-1)}>
           ← Back

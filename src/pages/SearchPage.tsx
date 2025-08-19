@@ -13,18 +13,20 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import EducHubHeader from '@/components/EducHubHeader';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 interface MockUser {
   id: string;
   name: string;
   email: string;
   lrn?: string;
-  role: 'student' | 'teacher';
+  role: 'student' | 'teacher' | 'admin';
   sections?: string[];
 }
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { bottomNavClass } = useBottomNav();
   const [searchResults, setSearchResults] = useState<MockUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -90,7 +92,7 @@ export default function SearchPage() {
   };
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} pb-32`}>
+    <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
       <EducHubHeader subtitle="Search" />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -171,42 +173,45 @@ export default function SearchPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {searchResults.map((user) => (
-                  <div key={user.id} className="p-4 border rounded-lg hover:bg-accent">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium flex items-center gap-2">{user.name}</h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <Mail className="w-4 h-4" />
-                            {user.email}
+                {searchResults.map((user) => {
+                  const isAdmin = user.email === 'zacharyrapiz@gmail.com' || user.role === 'admin'
+                  return (
+                    <div key={user.id} className={`p-4 border rounded-lg hover:bg-accent ${isAdmin ? 'border-red-500/60 bg-red-50 dark:bg-red-950/30' : ''}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isAdmin ? 'bg-red-600 text-white font-bold' : 'bg-blue-100'}`}>
+                            {isAdmin ? 'DEV' : <User className="w-5 h-5 text-blue-600" />}
                           </div>
-                          {user.lrn && (
+                          <div>
+                            <h3 className={`font-medium flex items-center gap-2 ${isAdmin ? 'text-red-700 dark:text-red-300 font-semibold' : ''}`}>{user.name}</h3>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                              <Hash className="w-4 h-4" />
-                              LRN: {user.lrn}
+                              <Mail className="w-4 h-4" />
+                              {user.email}
                             </div>
-                          )}
-                          {user.sections && user.sections.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {user.sections.map((section, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {section}
-                                </Badge>
-                              ))}
+                            {user.lrn && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                <Hash className="w-4 h-4" />
+                                LRN: {user.lrn}
+                              </div>
+                            )}
+                            {user.sections && user.sections.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {user.sections.map((section, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {section}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            <div className="mt-3">
+                              <a href={`/profile/${user.id}`} className={`block w-full sm:inline-block sm:w-auto px-3 py-2 text-sm rounded transition text-center ${isAdmin ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>View Full Profile</a>
                             </div>
-                          )}
-                          <div className="mt-3">
-                            <a href={`/profile/${user.id}`} className="block w-full sm:inline-block sm:w-auto px-3 py-2 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 transition text-center">View Full Profile</a>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

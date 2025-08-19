@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,68 +11,53 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useDrafts } from '@/contexts/DraftsContext';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 export default function CreateSection() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { saveDraft, deleteDraft } = useDrafts();
+  const { bottomNavClass } = useBottomNav();
   const [formData, setFormData] = useState({
     name: '',
     gradeLevel: '',
   });
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [isCheckingName, setIsCheckingName] = useState(false);
+
   // Add derived state for classification
   const gradeNum = Number(formData.gradeLevel);
   const isJunior = [7,8,9,10].includes(gradeNum);
   const isSenior = [11,12].includes(gradeNum);
   const classification = isJunior ? 'junior' : isSenior ? 'senior' : '';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) return;
-
-    const newSection: Section = {
-      id: Date.now().toString(),
-      name: formData.name,
-      gradeLevel: formData.gradeLevel,
-      students: [],
-      subjects: [],
-      createdBy: user.id,
-      createdAt: new Date().toISOString(),
-      ...(classification ? { classification } : {}),
-    };
-
-    await saveSection(newSection);
-    
-    toast({
-      title: "Section Created",
-      description: `${formData.name} has been created successfully.`
-    });
-
-    navigate('/');
-  };
-
-  const handleBack = () => {
-    navigate('/');
-  };
-
-  const handleSaveDraft = async () => {
-    if (!user) return;
-    // Check if user has uploaded any section
-    const allSections = await getSections();
-    const userSections = allSections.filter(s => s.createdBy === user.id);
-    if (userSections.length === 0) {
-      toast({
-        title: 'Upload Required',
-        description: 'You must upload a section before you can save a draft.',
-        variant: 'destructive',
-      });
-      return;
+  // Debounced uniqueness check
+  useEffect(() => {
+    let timer: number | undefined;
+    if (formData.name.trim().length > 0) {
+      setIsCheckingName(true);
+      timer = window.setTimeout(async () => {
+        const all = await getSections();
+        const target = formData.name.trim().toLowerCase();
+        const exists = all.some(s => (s.name || '').trim().toLowerCase() === target);
+        setNameError(exists ? 'A section with this name already exists.' : null);
+        setIsCheckingName(false);
+      }, 350);
+    } else {
+      setNameError(null);
+      setIsCheckingName(false);
     }
-    const newSection: Section = {
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [formData.name]);
+
+  const buildNewSection = (): Section | null => {
+    if (!user) return null;
+    return {
       id: Date.now().toString(),
-      name: formData.name,
+      name: formData.name.trim(),
       gradeLevel: formData.gradeLevel,
       students: [],
       subjects: [],
@@ -80,81 +65,102 @@ export default function CreateSection() {
       createdAt: new Date().toISOString(),
       ...(classification ? { classification } : {}),
     };
-    console.log('Saving draft:', { userId: user.id, newSection });
-    saveDraft(newSection);
-    toast({
-      title: 'Draft Saved',
-      description: `${formData.name} has been saved as a draft.`
-    });
-    navigate('/');
   };
 
-  const handleCreateAndUpload = async () => {
+  const validateBeforePersist = async (): Promise<boolean> => {
+    if (!formData.name.trim() || !formData.gradeLevel) {
+      toast({ title: 'Missing fields', description: 'Please enter a section name and select a grade level.', variant: 'destructive' });
+      return false;
+    }
+    // Final uniqueness check (non-debounced) to avoid race
+    const all = await getSections();
+    const target = formData.name.trim().toLowerCase();
+    const exists = all.some(s => (s.name || '').trim().toLowerCase() === target);
+    if (exists) {
+      setNameError('A section with this name already exists.');
+      toast({ title: 'Duplicate name', description: 'Please choose a different section name.', variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreate = async () => {
     if (!user) return;
-    const newSection: Section = {
-      id: Date.now().toString(),
-      name: formData.name,
-      gradeLevel: formData.gradeLevel,
-      students: [],
-      subjects: [],
-      createdBy: user.id,
-      createdAt: new Date().toISOString(),
-      ...(classification ? { classification } : {}),
-    };
+    if (!(await validateBeforePersist())) return;
+    const newSection = buildNewSection();
+    if (!newSection) return;
     await saveSection(newSection);
     deleteDraft(newSection.id);
-    toast({
-      title: 'Section Uploaded',
-      description: `${formData.name} has been uploaded.`
-    });
+    toast({ title: 'Section Created', description: `${newSection.name} has been created successfully.` });
     navigate('/');
   };
 
+  const handleSaveAsDraft = async () => {
+    if (!user) return;
+    if (!formData.name.trim() || !formData.gradeLevel) {
+      toast({ title: 'Missing fields', description: 'Please enter a section name and select a grade level.', variant: 'destructive' });
+      return;
+    }
+    // Allow drafts to be saved even if duplicate (so user can rename later), but warn
+    if (nameError) {
+      toast({ title: 'Duplicate name', description: 'This name already exists. Consider renaming before upload.' });
+    }
+    const newSection = buildNewSection();
+    if (!newSection) return;
+    saveDraft(newSection);
+    toast({ title: 'Draft Saved', description: `${newSection.name} has been saved as a draft.` });
+    navigate('/');
+  };
+
+  const handleBack = () => navigate('/');
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${bottomNavClass}`}>
       <header className="bg-card shadow-sm border-b">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4">
-            <Button variant="ghost" onClick={handleBack} className="mr-4">
+        <div className="max-w-2xl mx-auto px-3 sm:px-6">
+          <div className="flex items-center py-3">
+            <Button variant="ghost" onClick={handleBack} className="mr-2 sm:mr-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Create New Section</h1>
-              <p className="text-muted-foreground">Set up a new class section</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Create Section</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Set up a new class</p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-2xl mx-auto px-3 sm:px-6 py-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Section Details</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg">Section Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={e => { e.preventDefault(); handleSaveDraft(); }} className="space-y-6">
+            <div className="space-y-4">
               <div>
-                <Label htmlFor="name" className="text-base font-medium">
-                  Section Name
-                </Label>
+                <Label htmlFor="name" className="text-sm font-medium">Section Name</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Grade 10-A, Section Marigold"
+                  placeholder="e.g., Grade 10 - Marigold"
                   required
                   className="mt-1"
+                  aria-invalid={!!nameError}
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Choose a descriptive name for your section
-                </p>
+                <div className="mt-1 h-5 flex items-center">
+                  {isCheckingName && (
+                    <span className="text-xs text-muted-foreground">Checking name…</span>
+                  )}
+                  {!isCheckingName && nameError && (
+                    <span className="text-xs text-destructive">{nameError}</span>
+                  )}
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="gradeLevel" className="text-base font-medium">
-                  Grade Level
-                </Label>
+                <Label htmlFor="gradeLevel" className="text-sm font-medium">Grade Level</Label>
                 <Select
                   value={formData.gradeLevel}
                   onValueChange={value => setFormData({ ...formData, gradeLevel: value })}
@@ -172,25 +178,25 @@ export default function CreateSection() {
                     <SelectItem value="12">12</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-500 mt-1">
-                  {formData.gradeLevel === '' ? 'Select the grade level for this section' :
-                    isJunior ? 'Junior High School (4 quarters)' :
-                    isSenior ? 'Senior High School (2 semesters)' : ''}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formData.gradeLevel === '' ? 'Select the grade level' :
+                    isJunior ? 'Junior High School' :
+                    isSenior ? 'Senior High School' : ''}
                 </p>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6">
-                <Button type="button" variant="outline" onClick={handleBack}>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={handleBack} className="sm:order-first">
                   Cancel
                 </Button>
-                <Button type="submit">
-                  Save as Draft
+                <Button type="button" variant="secondary" onClick={handleSaveAsDraft}>
+                  Save Draft
                 </Button>
-                <Button type="button" variant="default" onClick={handleCreateAndUpload}>
-                  Upload Now
+                <Button type="button" onClick={handleCreate} disabled={!!nameError || isCheckingName}>
+                  Create Section
                 </Button>
               </div>
-            </form>
+            </div>
           </CardContent>
         </Card>
       </main>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBottomNav } from '@/hooks/use-mobile';
 import { StudentUserService, getTeacherSections } from '@/services/gradesService';
 import { useTheme } from 'next-themes';
 import { useParams } from 'react-router-dom';
@@ -16,6 +17,7 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ viewOnly }: ProfilePageProps) {
   const { user, userLRN, updateUserProfile } = useAuth();
+  const { bottomNavClass } = useBottomNav();
   const [studentSections, setStudentSections] = useState<any[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(false);
   const { theme } = useTheme();
@@ -139,8 +141,9 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
   };
 
   if (viewOnly) {
+    const isViewingAdmin = viewUser?.email === 'zacharyrapiz@gmail.com' || viewUser?.role === 'admin'
     return (
-      <div className={`min-h-screen flex flex-col items-center pb-20 transition-colors duration-300 ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900'}`}>
+      <div className={`min-h-screen flex flex-col items-center pb-20 transition-colors duration-300 ${isDark ? 'bg-[#0F1A2B] text-white' : (isViewingAdmin ? 'bg-gradient-to-b from-red-50 to-white text-gray-900' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900')}`}>
         <EducHubHeader subtitle="Profile" className="w-full" />
         <ProfileView
           profile={viewUser}
@@ -153,8 +156,9 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
     );
   }
 
+  const isSelfAdmin = user?.email === 'zacharyrapiz@gmail.com' || user?.role === 'admin'
   return (
-    <div className={`min-h-screen flex flex-col items-center pb-20 transition-colors duration-300 ${isDark ? 'bg-[#0F1A2B] text-white' : (editProfile.role === 'teacher' ? 'bg-gradient-to-b from-blue-200 to-white text-gray-900' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900')}`}>
+    <div className={`min-h-screen flex flex-col items-center transition-colors duration-300 ${bottomNavClass} ${isDark ? 'bg-[#0F1A2B] text-white' : (isSelfAdmin ? 'bg-gradient-to-b from-red-50 to-white text-gray-900' : (editProfile.role === 'teacher' ? 'bg-gradient-to-b from-blue-200 to-white text-gray-900' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900'))}`}>
       <EducHubHeader subtitle="Profile" className="w-full" />
       <ProfileView
         profile={user}

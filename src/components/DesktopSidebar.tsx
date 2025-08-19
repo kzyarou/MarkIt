@@ -32,6 +32,15 @@ function useNavItems(role?: string | null) {
     ] as const
   }
 
+  if (role === 'admin') {
+    return [
+      { id: 'admin', label: 'Admin', icon: Settings, path: '/admin' },
+      { id: 'search', label: 'Search', icon: Search, path: '/search' },
+      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
+      { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
+    ] as const
+  }
+
   return base
 }
 

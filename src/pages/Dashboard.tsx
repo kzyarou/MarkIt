@@ -21,11 +21,13 @@ import { useDrafts } from '@/contexts/DraftsContext';
 import { useTheme } from 'next-themes';
 import EducHubHeader from '@/components/EducHubHeader';
 import { Input } from '@/components/ui/input';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 export default function Dashboard() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const { user, logout } = useAuth();
+  const { bottomNavClass } = useBottomNav();
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -180,7 +182,7 @@ export default function Dashboard() {
     }
 
     return (
-      <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'}`}>
+      <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
         <EducHubHeader />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
@@ -260,8 +262,8 @@ export default function Dashboard() {
   }
 
   // Teacher Dashboard
-  return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} pb-32`}>
+      return (
+      <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
       <EducHubHeader subtitle="Dashboard" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Toolbar */}

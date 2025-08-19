@@ -13,9 +13,11 @@ import { DepEdClassRecord } from '@/components/DepEdClassRecord';
 import EducHubHeader from '@/components/EducHubHeader';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 export default function ReportsPage() {
   const navigate = useNavigate();
+  const { bottomNavClass } = useBottomNav();
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -188,7 +190,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} pb-32`}>
+    <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
       <EducHubHeader subtitle="Reports" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (

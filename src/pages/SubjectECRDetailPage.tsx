@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const QUARTERS = [
   { key: "quarter1", label: "Quarter 1" },
@@ -36,6 +37,8 @@ const emptyAssessment = (): Assessment => ({ name: "", score: "", total: "" });
 const SubjectECRDetailPage = () => {
   const { sectionId, subjectId } = useParams<{ sectionId: string; subjectId: string }>();
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [section, setSection] = useState<Section | null>(null);
   const [subject, setSubject] = useState<Subject | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
@@ -129,46 +132,71 @@ const SubjectECRDetailPage = () => {
   const handleSave = async () => {
     if (!section || !subject || !selectedStudentId) return;
     setSaving(true);
-    // Update gradeData for the selected student, subject, and quarter
-    const updatedStudents = students.map(s => {
-      if (s.id !== selectedStudentId) return s;
-      const prevGradeData = s.gradeData || {} as any;
-      const createEmptyCategoryScores = (): CategoryScores => ({ writtenWork: [], performanceTask: [], quarterlyExam: [] });
-      const createEmptyQuarterGrades = (): QuarterGrades => ({
-        quarter1: createEmptyCategoryScores(),
-        quarter2: createEmptyCategoryScores(),
-        quarter3: createEmptyCategoryScores(),
-        quarter4: createEmptyCategoryScores(),
-      });
-      const prevSubjectData: QuarterGrades = prevGradeData[subject.id] || createEmptyQuarterGrades();
-      return {
-        ...s,
-        gradeData: {
-          ...prevGradeData,
-          [subject.id]: {
-            ...prevSubjectData,
-            [selectedQuarter]: {
-              writtenWork: assessments.writtenWork,
-              performanceTask: assessments.performanceTask,
-              quarterlyExam: assessments.quarterlyExam,
+    
+    try {
+      // Update gradeData for the selected student, subject, and quarter
+      const updatedStudents = students.map(s => {
+        if (s.id !== selectedStudentId) return s;
+        
+        const prevGradeData = s.gradeData || {} as any;
+        const createEmptyCategoryScores = (): CategoryScores => ({ 
+          writtenWork: [], 
+          performanceTask: [], 
+          quarterlyExam: [] 
+        });
+        const createEmptyQuarterGrades = (): QuarterGrades => ({
+          quarter1: createEmptyCategoryScores(),
+          quarter2: createEmptyCategoryScores(),
+          quarter3: createEmptyCategoryScores(),
+          quarter4: createEmptyCategoryScores(),
+        });
+        
+        const prevSubjectData: QuarterGrades = prevGradeData[subject.id] || createEmptyQuarterGrades();
+        
+        return {
+          ...s,
+          gradeData: {
+            ...prevGradeData,
+            [subject.id]: {
+              ...prevSubjectData,
+              [selectedQuarter]: {
+                writtenWork: [...assessments.writtenWork],
+                performanceTask: [...assessments.performanceTask],
+                quarterlyExam: [...assessments.quarterlyExam],
+              }
             }
           }
-        }
+        };
+      });
+      
+      const updatedSection: Section = {
+        ...section,
+        students: updatedStudents
       };
-    });
-    const updatedSection: Section = {
-      ...section,
-      students: updatedStudents
-    };
-    await saveSection(updatedSection);
-    setSection(updatedSection);
-    setStudents(updatedStudents);
-    setSaving(false);
+      
+      // Save to backend
+      await saveSection(updatedSection);
+      
+      // Update local state immediately for real-time feedback
+      setSection(updatedSection);
+      setStudents(updatedStudents);
+      
+      // Force a re-render by updating the selected student
+      const updatedStudent = updatedStudents.find(s => s.id === selectedStudentId);
+      if (updatedStudent) {
+        setSelectedStudentId(updatedStudent.id);
+      }
+      
+    } catch (error) {
+      console.error('Error saving grades:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#181c24]">
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-[#181c24]' : 'bg-background'}`}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -176,9 +204,9 @@ const SubjectECRDetailPage = () => {
 
   if (!section || !subject || !students.length || !selectedStudentId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#181c24]">
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-[#181c24]' : 'bg-background'}`}>
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4 text-white">Section, Subject, or Student not found</h1>
+          <h1 className={`text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-foreground'}`}>Section, Subject, or Student not found</h1>
           <Button onClick={() => navigate(-1)}>Go Back</Button>
         </div>
       </div>
@@ -188,34 +216,34 @@ const SubjectECRDetailPage = () => {
   const student = students.find(s => s.id === selectedStudentId)!;
 
   return (
-    <div className="min-h-screen bg-[#181c24] pb-24 px-2">
+    <div className={`min-h-screen pb-24 px-2 ${isDark ? 'bg-[#181c24]' : 'bg-background'}`}>
       <div className="pt-6 pb-2">
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-6 text-white">EducHub</h1>
+        <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-6 ${isDark ? 'text-white' : 'text-foreground'}`}>EducHub</h1>
       </div>
-      <div className="max-w-4xl mx-auto mt-8 bg-[#232a36] rounded-lg shadow-lg p-6">
+      <div className={`max-w-4xl mx-auto mt-8 rounded-lg shadow-lg p-6 ${isDark ? 'bg-[#232a36]' : 'bg-card'}`}>
         <div className="flex items-center mb-6">
-          <Button variant="ghost" className="text-white mr-4" onClick={() => navigate(`/section/${section.id}/subjects-ecr`)}>
+          <Button variant="ghost" className={`mr-4 ${isDark ? 'text-white hover:bg-gray-700' : 'text-foreground hover:bg-accent'}`} onClick={() => navigate(`/section/${section.id}/subjects-ecr`)}>
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
           </Button>
           <div>
-            <div className="text-lg font-semibold text-white">Grading: {student.name} - {subject.name}</div>
-            <div className="text-sm text-gray-300">View and edit grades for each quarter and category for this student and subject.</div>
+            <div className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-foreground'}`}>Grading: {student.name} - {subject.name}</div>
+            <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-muted-foreground'}`}>View and edit grades for each quarter and category for this student and subject.</div>
           </div>
         </div>
         <div className="flex flex-col md:flex-row gap-8">
           {/* Students List */}
           <div className="w-full md:w-1/4">
-            <Card className="bg-[#202634]">
+            <Card className={isDark ? "bg-[#202634]" : "bg-card"}>
               <CardHeader>
-                <CardTitle className="text-white text-base">Students</CardTitle>
+                <CardTitle className={`text-base ${isDark ? 'text-white' : 'text-foreground'}`}>Students</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="divide-y divide-gray-700">
+                <ul className={`${isDark ? 'divide-y divide-gray-700' : 'divide-y divide-border'}`}>
                   {students.map(s => (
                     <li key={s.id}>
                       <button
-                        className={`w-full text-left px-3 py-2 rounded mb-1 transition-colors ${selectedStudentId === s.id ? 'bg-blue-600 text-white font-bold' : 'bg-[#232a36] text-gray-200 hover:bg-blue-900'}`}
+                        className={`w-full text-left px-3 py-2 rounded mb-1 transition-colors ${selectedStudentId === s.id ? 'bg-blue-600 text-white font-bold' : isDark ? 'bg-[#232a36] text-gray-200 hover:bg-blue-900' : 'bg-secondary text-secondary-foreground hover:bg-accent'}`}
                         onClick={() => handleSelectStudent(s.id)}
                       >
                         {s.name}
@@ -233,7 +261,7 @@ const SubjectECRDetailPage = () => {
               {CATEGORY_TABS.map(cat => (
                 <button
                   key={cat.key}
-                  className={`flex-1 px-4 py-2 rounded-t bg-[#232a36] text-white font-semibold border-b-2 ${selectedCategory === cat.key ? 'border-blue-400 bg-[#181c24]' : 'border-transparent'}`}
+                  className={`flex-1 px-4 py-2 rounded-t font-semibold border-b-2 ${selectedCategory === cat.key ? (isDark ? 'border-blue-400 bg-[#181c24] text-white' : 'border-blue-400 bg-accent text-foreground') : (isDark ? 'bg-[#232a36] text-white border-transparent' : 'bg-secondary text-secondary-foreground border-transparent')}`}
                   onClick={() => setSelectedCategory(cat.key as CategoryKey)}
                 >
                   {cat.label}
@@ -245,7 +273,7 @@ const SubjectECRDetailPage = () => {
               {QUARTERS.map(q => (
                 <button
                   key={q.key}
-                  className={`flex-1 px-4 py-2 rounded-t bg-[#232a36] text-white font-semibold border-b-2 ${selectedQuarter === q.key ? 'border-blue-400 bg-[#181c24]' : 'border-transparent'}`}
+                  className={`flex-1 px-4 py-2 rounded-t font-semibold border-b-2 ${selectedQuarter === q.key ? (isDark ? 'border-blue-400 bg-[#181c24] text-white' : 'border-blue-400 bg-accent text-foreground') : (isDark ? 'bg-[#232a36] text-white border-transparent' : 'bg-secondary text-secondary-foreground border-transparent')}`}
                   onClick={() => setSelectedQuarter(q.key as QuarterKey)}
                 >
                   {q.label}
@@ -253,39 +281,39 @@ const SubjectECRDetailPage = () => {
               ))}
             </div>
             {/* Assessments for selected category and quarter */}
-            <div className="bg-[#202634] rounded-lg p-4 mb-6 shadow">
+            <div className={`rounded-lg p-4 mb-6 shadow ${isDark ? 'bg-[#202634]' : 'bg-card'}`}>
               <div className="flex justify-between items-center mb-2">
-                <div className="text-lg font-semibold text-white">{CATEGORY_TABS.find(c => c.key === selectedCategory)?.label}</div>
+                <div className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-foreground'}`}>{CATEGORY_TABS.find(c => c.key === selectedCategory)?.label}</div>
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleAddAssessment(selectedCategory)}>
                   <Plus className="w-4 h-4 mr-1" /> Add Assessment
                 </Button>
               </div>
               {assessments[selectedCategory].length === 0 ? (
-                <div className="text-gray-400 italic">No assessments yet.</div>
+                <div className={`italic ${isDark ? 'text-gray-400' : 'text-muted-foreground'}`}>No assessments yet.</div>
               ) : (
                 assessments[selectedCategory].map((a, idx) => (
-                  <div key={a.id} className="flex items-center gap-2 mb-3 bg-[#232a36] p-3 rounded">
+                  <div key={a.id} className={`flex items-center gap-2 mb-3 p-3 rounded ${isDark ? 'bg-[#232a36]' : 'bg-secondary'}`}>
                     <Input
-                      className="bg-[#181c24] text-white border-gray-600 w-32"
+                      className={`w-32 ${isDark ? 'bg-[#181c24] text-white border-gray-600' : 'bg-background text-foreground border-input'}`}
                       placeholder="Assessment Name"
                       value={a.name}
                       onChange={e => handleAssessmentChange(selectedCategory, idx, "name", e.target.value)}
                     />
                     <div className="flex items-center gap-1">
-                      <span className="text-gray-300">Score</span>
+                      <span className={isDark ? 'text-gray-300' : 'text-muted-foreground'}>Score</span>
                       <Input
-                        className="bg-[#181c24] text-white border-gray-600 w-16"
+                        className={`w-16 ${isDark ? 'bg-[#181c24] text-white border-gray-600' : 'bg-background text-foreground border-input'}`}
                         type="number"
                         min={0}
                         value={a.score}
                         onChange={e => handleAssessmentChange(selectedCategory, idx, "score", e.target.value)}
                       />
                     </div>
-                    <span className="text-gray-300">/</span>
+                    <span className={isDark ? 'text-gray-300' : 'text-muted-foreground'}>/</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-gray-300">Total Points</span>
+                      <span className={isDark ? 'text-gray-300' : 'text-muted-foreground'}>Total Points</span>
                       <Input
-                        className="bg-[#181c24] text-white border-gray-600 w-16"
+                        className={`w-16 ${isDark ? 'bg-[#181c24] text-white border-gray-600' : 'bg-background text-foreground border-input'}`}
                         type="number"
                         min={0}
                         value={a.totalPoints}

@@ -58,6 +58,16 @@ function useNavItems() {
     ]
   }
 
+  if (user?.role === 'admin') {
+    // Admin: keep Admin, hide Sections and Reports top-level
+    items = [
+      { id: 'admin', label: 'Admin', icon: Settings, path: '/admin' },
+      { id: 'search', label: 'Search', icon: Search, path: '/search' },
+      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
+      { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
+    ]
+  }
+
   return items
 }
 
@@ -150,6 +160,8 @@ function UserFooter() {
   const role = user?.role || "student"
   const avatarUrl = user?.avatarUrl
 
+  const fallbackText = role === 'admin' ? 'DEV' : initialsFromName(name)
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -158,15 +170,15 @@ function UserFooter() {
             {avatarUrl ? (
               <AvatarImage src={avatarUrl} alt={name} />
             ) : (
-              <AvatarFallback>{initialsFromName(name)}</AvatarFallback>
+              <AvatarFallback className={role === 'admin' ? 'bg-red-600 text-white' : ''}>{fallbackText}</AvatarFallback>
             )}
           </Avatar>
           <div className="min-w-0 text-left group-data-[collapsible=icon]:hidden">
             <div className="truncate text-sm font-medium leading-5">{name}</div>
             <div className="truncate text-xs text-muted-foreground">{email}</div>
           </div>
-          <Badge variant="secondary" className="ml-auto group-data-[collapsible=icon]:hidden capitalize">
-            {role}
+          <Badge variant={role === 'admin' ? 'destructive' : 'secondary'} className="ml-auto group-data-[collapsible=icon]:hidden capitalize">
+            {role === 'teacher' ? 'developer' : role}
           </Badge>
         </button>
       </DropdownMenuTrigger>

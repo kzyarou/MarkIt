@@ -67,8 +67,50 @@ export function StudentSubjectGradingModal({
   useEffect(() => {
     if (student.gradeData[subject.id]) {
       setGradeData(student.gradeData[subject.id]);
+    } else {
+      // Initialize gradeData with empty arrays for all quarters and categories
+      const initialGradeData: QuarterGrades = {
+        quarter1: { writtenWork: [], performanceTask: [], quarterlyExam: [] },
+        quarter2: { writtenWork: [], performanceTask: [], quarterlyExam: [] },
+        quarter3: { writtenWork: [], performanceTask: [], quarterlyExam: [] },
+        quarter4: { writtenWork: [], performanceTask: [], quarterlyExam: [] }
+      };
+      setGradeData(initialGradeData);
     }
   }, [student, subject.id]);
+
+  // Sync gradeData with assessments when assessments change
+  useEffect(() => {
+    if (assessments.length > 0) {
+      setGradeData(prev => {
+        const updated = { ...prev };
+        
+        // For each assessment, ensure there's a corresponding score entry
+        assessments.forEach(assessment => {
+          const quarter = assessment.quarter;
+          const category = assessment.category;
+          
+          // Check if score entry exists for this assessment
+          const existingEntry = updated[quarter][category].find(s => s.id === assessment.id);
+          if (!existingEntry) {
+            // Add missing score entry
+            updated[quarter][category].push({
+              id: assessment.id,
+              name: assessment.name,
+              score: 0,
+              totalPoints: assessment.totalPoints || 100
+            });
+          } else {
+            // Update existing entry with latest assessment data
+            existingEntry.name = assessment.name;
+            existingEntry.totalPoints = assessment.totalPoints || 100;
+          }
+        });
+        
+        return updated;
+      });
+    }
+  }, [assessments]);
 
   const addScore = (category: keyof CategoryScores) => {
     // Determine prefix and count for default name
@@ -126,23 +168,57 @@ export function StudentSubjectGradingModal({
       name: `${prefix}#${count}`,
       category,
       quarter,
-      totalPoints: 0
+      totalPoints: 100 // Default to 100 points
     };
     const updatedAssessments = [...assessments, newAssessment];
     setAssessments(updatedAssessments);
-    // Add score entry for all students
+    
+    // Add score entry for the current student with the correct totalPoints
+    setGradeData(prev => ({
+      ...prev,
+      [quarter]: {
+        ...prev[quarter],
+        [category]: [
+          ...prev[quarter][category],
+          {
+            id: newAssessment.id,
+            name: newAssessment.name,
+            score: 0,
+            totalPoints: newAssessment.totalPoints
+          }
+        ]
+      }
+    }));
+    
+    // Add score entry for all other students in the section
     const updatedSection = { ...section };
     updatedSection.subjects = updatedSection.subjects.map(subj =>
       subj.id === subject.id ? { ...subj, assessments: updatedAssessments } : subj
     );
     updatedSection.students = updatedSection.students.map(s => {
+      if (s.id === student.id) return s; // Skip current student as we already updated their gradeData
+      
       const gd = { ...s.gradeData };
-      if (!gd[subject.id]) gd[subject.id] = { quarter1: { writtenWork: [], performanceTask: [], quarterlyExam: [] }, quarter2: { writtenWork: [], performanceTask: [], quarterlyExam: [] }, quarter3: { writtenWork: [], performanceTask: [], quarterlyExam: [] }, quarter4: { writtenWork: [], performanceTask: [], quarterlyExam: [] } };
-      const q = gd[subject.id][quarter];
-      q[category] = [...q[category], { id: newAssessment.id, name: newAssessment.name, score: 0, totalPoints: newAssessment.totalPoints }];
-      gd[subject.id][quarter] = q;
+      if (!gd[subject.id]) {
+        gd[subject.id] = {
+          quarter1: { writtenWork: [], performanceTask: [], quarterlyExam: [] },
+          quarter2: { writtenWork: [], performanceTask: [], quarterlyExam: [] },
+          quarter3: { writtenWork: [], performanceTask: [], quarterlyExam: [] },
+          quarter4: { writtenWork: [], performanceTask: [], quarterlyExam: [] }
+        };
+      }
+      
+      // Add the new score entry for this student
+      gd[subject.id][quarter][category].push({
+        id: newAssessment.id,
+        name: newAssessment.name,
+        score: 0,
+        totalPoints: newAssessment.totalPoints
+      });
+      
       return { ...s, gradeData: gd };
     });
+    
     setSection(updatedSection);
   };
 
@@ -211,26 +287,27 @@ export function StudentSubjectGradingModal({
     updatedSection.subjects = updatedSection.subjects.map(subj =>
       subj.id === subject.id ? { ...subj, assessments } : subj
     );
-    // Propagate assessment changes to all students (ensure all have score entries for all assessments)
-    updatedSection.students = updatedSection.students.map(s => {
-      if (s.id === student.id) {
-        // Update the current student's gradeData with the latest from the modal, preserving other subjects
-        return { ...s, gradeData: { ...s.gradeData, [subject.id]: gradeData } };
+    
+    // Create a deep copy of the student's grade data to ensure state updates
+    const updatedStudent = {
+      ...student,
+      gradeData: {
+        ...student.gradeData,
+        [subject.id]: { ...gradeData }
       }
-      const gd = { ...s.gradeData };
-      if (!gd[subject.id]) gd[subject.id] = { quarter1: { writtenWork: [], performanceTask: [], quarterlyExam: [] }, quarter2: { writtenWork: [], performanceTask: [], quarterlyExam: [] }, quarter3: { writtenWork: [], performanceTask: [], quarterlyExam: [] }, quarter4: { writtenWork: [], performanceTask: [], quarterlyExam: [] } };
-      assessments.forEach(a => {
-        const arr = gd[subject.id][a.quarter][a.category];
-        if (!arr.find(e => e.id === a.id)) {
-          arr.push({ id: a.id, name: a.name, score: 0, totalPoints: a.totalPoints });
-        }
-      });
-      gd[subject.id] = { ...gd[subject.id] };
-      return { ...s, gradeData: gd };
-    });
+    };
+
+    // Update the section with the new student data
+    updatedSection.students = updatedSection.students.map(s => 
+      s.id === student.id ? updatedStudent : s
+    );
+
+    // Update local state immediately for real-time feedback
     setSection(updatedSection);
+    
     // Save the updated section to the backend
     await saveSection(updatedSection);
+    
     // Sync grades for all connected students in this section
     for (const s of updatedSection.students) {
       if (s.connectedUserId) {
@@ -243,9 +320,10 @@ export function StudentSubjectGradingModal({
         );
       }
     }
-    // Save the current student's grades
-    const updatedStudent = updatedSection.students.find(s => s.id === student.id) || student;
+    
+    // Call onSave with the updated student to trigger parent component updates
     onSave(updatedStudent, hideGrades);
+    
     onClose();
     toast({
       title: hideGrades ? "Grades Saved (Hidden)" : "Grades Saved",
@@ -297,19 +375,25 @@ export function StudentSubjectGradingModal({
                       value={scoreEntry ? (scoreEntry.score === 0 ? '' : scoreEntry.score) : ''}
                       onChange={e => {
                         const value = parseFloat(e.target.value) || 0;
+                        console.log('Updating score:', { assessmentId: assessment.id, category, value });
+                        
                         setGradeData(prev => {
                           const updatedScores = prev[getCurrentQuarter()][category].some(s => s.id === assessment.id)
                             ? prev[getCurrentQuarter()][category].map(s =>
                                 s.id === assessment.id ? { ...s, score: value } : s
                               )
                             : [...prev[getCurrentQuarter()][category], { id: assessment.id, name: assessment.name, score: value, totalPoints: assessment.totalPoints }];
-                          return {
+                          
+                          const newGradeData = {
                             ...prev,
                             [getCurrentQuarter()]: {
                               ...prev[getCurrentQuarter()],
                               [category]: updatedScores
                             }
                           };
+                          
+                          console.log('Updated grade data:', newGradeData);
+                          return newGradeData;
                         });
                       }}
                       placeholder="Score"
@@ -372,6 +456,12 @@ export function StudentSubjectGradingModal({
   }
   const currentQuarter = getCurrentQuarter();
   const quarterResult = calculateQuarterGrade(gradeData[currentQuarter], subject);
+  
+  // Debug logging
+  console.log('Current quarter:', currentQuarter);
+  console.log('Grade data for quarter:', gradeData[currentQuarter]);
+  console.log('Subject:', subject);
+  console.log('Quarter result:', quarterResult);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
