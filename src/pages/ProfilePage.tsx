@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProfileView } from '@/components/ProfileView';
 import { getDoc, doc as firestoreDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import EducHubHeader from '@/components/EducHubHeader';
+import MarkItHeader from '@/components/MarkItHeader';
 import type { Section } from '@/types/grading';
 
 interface ProfilePageProps {
@@ -141,10 +141,10 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
   };
 
   if (viewOnly) {
-    const isViewingAdmin = viewUser?.email === 'zacharyrapiz@gmail.com' || viewUser?.role === 'admin'
+    const isViewingAdmin = viewUser?.email === 'zacharythanos@gmail.com' || viewUser?.role === 'admin'
     return (
       <div className={`min-h-screen flex flex-col items-center pb-20 transition-colors duration-300 ${isDark ? 'bg-[#0F1A2B] text-white' : (isViewingAdmin ? 'bg-gradient-to-b from-red-50 to-white text-gray-900' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900')}`}>
-        <EducHubHeader subtitle="Profile" className="w-full" />
+        <MarkItHeader subtitle="Profile" className="w-full" />
         <ProfileView
           profile={viewUser}
           editable={false}
@@ -156,10 +156,10 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
     );
   }
 
-  const isSelfAdmin = user?.email === 'zacharyrapiz@gmail.com' || user?.role === 'admin'
+  const isSelfAdmin = user?.email === 'zacharythanos@gmail.com' || user?.role === 'admin'
   return (
     <div className={`min-h-screen flex flex-col items-center transition-colors duration-300 ${bottomNavClass} ${isDark ? 'bg-[#0F1A2B] text-white' : (isSelfAdmin ? 'bg-gradient-to-b from-red-50 to-white text-gray-900' : (editProfile.role === 'teacher' ? 'bg-gradient-to-b from-blue-200 to-white text-gray-900' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900'))}`}>
-      <EducHubHeader subtitle="Profile" className="w-full" />
+      <MarkItHeader subtitle="Profile" className="w-full" />
       <ProfileView
         profile={user}
         editable={true}

@@ -3,43 +3,71 @@ import { auth, db } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User as FirebaseUser, EmailAuthProvider, reauthenticateWithCredential, deleteUser, GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { deleteAllUserData } from '../services/gradesService';
+import { createAuthError, createNetworkError, createValidationError } from '@/utils/errorHandling';
+import { cacheService } from '../services/cacheService';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'teacher' | 'student' | 'parent' | 'admin';
-  lrn?: string;
-  avatarUrl?: string;
-  bio?: string;
-  contactNo?: string;
-  age?: number;
-  employeeNumber?: string;
-  facebook?: string;
+  role: 'farmer' | 'fisherman' | 'buyer' | 'admin';
+  profileImage?: string;
+  phoneNumber?: string;
+  location?: {
+    address: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+    region: string;
+    province: string;
+    city: string;
+  };
+  businessInfo?: {
+    businessName: string;
+    businessType: 'individual' | 'cooperative' | 'company' | 'restaurant' | 'school' | 'hospital' | 'retailer';
+    licenseNumber?: string;
+    description?: string;
+  };
+  verificationStatus?: {
+    isVerified: boolean;
+    verifiedAt?: string;
+    documents: string[];
+  };
+  rating?: {
+    average: number;
+    totalReviews: number;
+  };
   lastLogin?: string;
-  gender?: 'male' | 'female'; // <-- Added gender
-  gradeLevel?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  userLRN: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (userData: {
     email: string;
     password: string;
     name: string;
-    role: 'teacher' | 'student' | 'parent' | 'admin';
-    lrn?: string;
-    avatarUrl?: string;
-    bio?: string;
-    contactNo?: string;
-    age?: number;
-    employeeNumber?: string;
-    facebook?: string;
-    lastLogin?: string;
-    gender?: 'male' | 'female'; // <-- Added gender
-    gradeLevel?: string;
+    role: 'farmer' | 'fisherman' | 'buyer' | 'admin';
+    phoneNumber?: string;
+    location?: {
+      address: string;
+      coordinates: {
+        lat: number;
+        lng: number;
+      };
+      region: string;
+      province: string;
+      city: string;
+    };
+    businessInfo?: {
+      businessName: string;
+      businessType: 'individual' | 'cooperative' | 'company' | 'restaurant' | 'school' | 'hospital' | 'retailer';
+      licenseNumber?: string;
+      description?: string;
+    };
   }) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -61,7 +89,6 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userLRN, setUserLRN] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Add this useEffect to restore user from localStorage
@@ -70,7 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
-      setUserLRN(parsedUser.lrn || null);
     }
     setIsLoading(false);
   }, []);
@@ -78,54 +104,103 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Validate input
+      if (!email || !password) {
+        throw createValidationError('Email and password are required', 'Login Validation');
+      }
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
-      // Fetch user profile from Firestore
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-      let userProfile = null;
-      if (userDoc.exists()) {
-        userProfile = userDoc.data();
+      
+      // Check cache first for user profile
+      const cacheKey = `user_profile_${firebaseUser.uid}`;
+      let userProfile = cacheService.get(cacheKey);
+      
+      if (!userProfile) {
+        // Fetch user profile from Firestore
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          userProfile = userDoc.data();
+          // Cache the profile for 10 minutes
+          cacheService.set(cacheKey, userProfile, 10 * 60 * 1000);
+        } else {
+          // Create a basic user profile if it doesn't exist
+          const basicProfile = {
+            name: firebaseUser.displayName || 'User',
+            email: firebaseUser.email,
+            role: 'farmer', // Default role
+            phoneNumber: '',
+            verificationStatus: {
+              isVerified: false,
+              documents: []
+            },
+            rating: {
+              average: 0,
+              totalReviews: 0
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          
+          await setDoc(doc(db, 'users', firebaseUser.uid), basicProfile);
+          userProfile = basicProfile;
+          // Cache the profile for 10 minutes
+          cacheService.set(cacheKey, userProfile, 10 * 60 * 1000);
+        }
       }
-      // Update lastLogin timestamp
+      
+      // Update lastLogin timestamp (only if document exists)
       const lastLogin = new Date().toISOString();
-      await updateDoc(doc(db, 'users', firebaseUser.uid), { lastLogin });
-      setUser({
+      if (userProfile) {
+        await updateDoc(doc(db, 'users', firebaseUser.uid), { lastLogin });
+      }
+      
+      const userData = {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
-        name: userProfile?.name || firebaseUser.displayName || '',
-        role: (firebaseUser.email === 'zacharyrapiz@gmail.com') ? 'admin' : (userProfile?.role || 'student'),
-        lrn: userProfile?.lrn || null,
-        avatarUrl: userProfile?.avatarUrl || '',
-        bio: userProfile?.bio || '',
-        contactNo: userProfile?.contactNo || '',
-        age: userProfile?.age || null,
-        employeeNumber: userProfile?.employeeNumber || '',
-        facebook: userProfile?.facebook || '',
+        name: (userProfile as any)?.name || firebaseUser.displayName || '',
+        role: (firebaseUser.email === 'zacharythanos@gmail.com') ? 'admin' : ((userProfile as any)?.role || 'buyer'),
+        profileImage: (userProfile as any)?.profileImage || '',
+        phoneNumber: (userProfile as any)?.phoneNumber || '',
+        location: (userProfile as any)?.location || undefined,
+        businessInfo: (userProfile as any)?.businessInfo || undefined,
+        verificationStatus: (userProfile as any)?.verificationStatus || {
+          isVerified: false,
+          documents: []
+        },
+        rating: (userProfile as any)?.rating || {
+          average: 0,
+          totalReviews: 0
+        },
         lastLogin: lastLogin,
-        gender: userProfile?.gender || undefined, // <-- Added gender
-        gradeLevel: userProfile?.gradeLevel || '',
-      });
-      setUserLRN(userProfile?.lrn || null);
-      localStorage.setItem('currentUser', JSON.stringify({
-        id: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        name: userProfile?.name || firebaseUser.displayName || '',
-        role: (firebaseUser.email === 'zacharyrapiz@gmail.com') ? 'admin' : (userProfile?.role || 'student'),
-        lrn: userProfile?.lrn || null,
-        avatarUrl: userProfile?.avatarUrl || '',
-        bio: userProfile?.bio || '',
-        contactNo: userProfile?.contactNo || '',
-        age: userProfile?.age || null,
-        employeeNumber: userProfile?.employeeNumber || '',
-        facebook: userProfile?.facebook || '',
-        lastLogin,
-        gender: userProfile?.gender || undefined, // <-- Added gender
-        gradeLevel: userProfile?.gradeLevel || '',
-      }));
+        createdAt: (userProfile as any)?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      setUser(userData);
+      localStorage.setItem('currentUser', JSON.stringify(userData));
       return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+    } catch (error: any) {
+      // Enhanced error handling with specific error types
+      let appError;
+      
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        appError = createAuthError('Invalid email or password', 'Login Authentication');
+      } else if (error.code === 'auth/too-many-requests') {
+        appError = createAuthError('Too many failed attempts. Please try again later.', 'Login Rate Limit');
+      } else if (error.code === 'auth/network-request-failed') {
+        appError = createNetworkError('Network error. Please check your connection.', 'Login Network');
+      } else if (error.code === 'auth/user-disabled') {
+        appError = createAuthError('Account has been disabled. Please contact support.', 'Login Account Status');
+      } else {
+        appError = createAuthError(
+          error.message || 'An unexpected error occurred during login',
+          'Login Unknown Error'
+        );
+      }
+      
+      console.error('Login error:', appError);
+      throw appError;
     } finally {
       setIsLoading(false);
     }
@@ -135,76 +210,121 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string;
     password: string;
     name: string;
-    role: 'teacher' | 'student' | 'parent' | 'admin';
-    lrn?: string;
-    avatarUrl?: string;
-    bio?: string;
-    contactNo?: string;
-    age?: number;
-    employeeNumber?: string;
-    facebook?: string;
-    lastLogin?: string;
-    gender?: 'male' | 'female'; // <-- Added gender
-    gradeLevel?: string;
+    role: 'farmer' | 'fisherman' | 'buyer' | 'admin';
+    phoneNumber?: string;
+    location?: {
+      address: string;
+      coordinates: {
+        lat: number;
+        lng: number;
+      };
+      region: string;
+      province: string;
+      city: string;
+    };
+    businessInfo?: {
+      businessName: string;
+      businessType: 'individual' | 'cooperative' | 'company' | 'restaurant' | 'school' | 'hospital' | 'retailer';
+      licenseNumber?: string;
+      description?: string;
+    };
   }): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Validate input
+      if (!userData.email || !userData.password || !userData.name) {
+        throw createValidationError('Email, password, and name are required', 'Signup Validation');
+      }
+
+      if (userData.password.length < 6) {
+        throw createValidationError('Password must be at least 6 characters long', 'Signup Validation');
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
       const firebaseUser = userCredential.user;
+      
       // Save user profile to Firestore
       const userProfile: any = {
         name: userData.name,
         email: firebaseUser.email,
         role: userData.role,
-        lrn: userData.lrn || null,
-        bio: userData.bio || '',
-        gender: userData.gender || undefined, // <-- Added gender
-        gradeLevel: userData.gradeLevel || '',
+        phoneNumber: userData.phoneNumber || '',
+        verificationStatus: {
+          isVerified: false,
+          documents: []
+        },
+        rating: {
+          average: 0,
+          totalReviews: 0
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
-      if (userData.avatarUrl) userProfile.avatarUrl = userData.avatarUrl;
-      if (userData.contactNo !== undefined) userProfile.contactNo = userData.contactNo;
-      if (userData.age !== undefined) userProfile.age = userData.age;
-      if (userData.employeeNumber !== undefined) userProfile.employeeNumber = userData.employeeNumber;
-      if (userData.facebook !== undefined) userProfile.facebook = userData.facebook;
-      if (userData.lastLogin !== undefined) userProfile.lastLogin = userData.lastLogin;
+
+      // Only add optional fields if they exist and are not undefined
+      if (userData.location) {
+        userProfile.location = userData.location;
+      }
+      if (userData.businessInfo) {
+        userProfile.businessInfo = userData.businessInfo;
+      }
+      
       await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
-      setUser({
+      
+      const newUser: any = {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
         name: userData.name,
         role: userData.role,
-        lrn: userData.lrn,
-        avatarUrl: userData.avatarUrl || '',
-        bio: userData.bio || '',
-        contactNo: userData.contactNo || '',
-        age: userData.age || null,
-        employeeNumber: userData.employeeNumber || '',
-        facebook: userData.facebook || '',
-        lastLogin: userData.lastLogin || '',
-        gender: userData.gender || undefined, // <-- Added gender
-        gradeLevel: userData.gradeLevel || '',
-      });
-      setUserLRN(userData.lrn || null);
-      localStorage.setItem('currentUser', JSON.stringify({
-        id: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        name: userData.name,
-        role: userData.role,
-        lrn: userData.lrn,
-        avatarUrl: userData.avatarUrl || '',
-        bio: userData.bio || '',
-        contactNo: userData.contactNo || '',
-        age: userData.age || null,
-        employeeNumber: userData.employeeNumber || '',
-        facebook: userData.facebook || '',
-        lastLogin: userData.lastLogin || '',
-        gender: userData.gender || undefined, // <-- Added gender
-        gradeLevel: userData.gradeLevel || '',
-      }));
+        profileImage: '',
+        phoneNumber: userData.phoneNumber || '',
+        verificationStatus: {
+          isVerified: false,
+          documents: []
+        },
+        rating: {
+          average: 0,
+          totalReviews: 0
+        },
+        lastLogin: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Only add optional fields if they exist
+      if (userData.location) {
+        newUser.location = userData.location;
+      }
+      if (userData.businessInfo) {
+        newUser.businessInfo = userData.businessInfo;
+      }
+      
+      setUser(newUser);
+      localStorage.setItem('currentUser', JSON.stringify(newUser));
       return true;
-    } catch (error) {
-      console.error('Signup error:', error);
-      return false;
+    } catch (error: any) {
+      // Enhanced error handling with specific error types
+      let appError;
+      
+      if (error.code === 'auth/email-already-in-use') {
+        appError = createAuthError('An account with this email already exists', 'Signup Duplicate Email');
+      } else if (error.code === 'auth/invalid-email') {
+        appError = createValidationError('Please enter a valid email address', 'Signup Email Validation');
+      } else if (error.code === 'auth/weak-password') {
+        appError = createValidationError('Password is too weak. Please choose a stronger password', 'Signup Password Validation');
+      } else if (error.code === 'auth/network-request-failed') {
+        appError = createNetworkError('Network error. Please check your connection.', 'Signup Network');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        appError = createAuthError('Email/password accounts are not enabled. Please contact support.', 'Signup Configuration');
+      } else {
+        appError = createAuthError(
+          error.message || 'An unexpected error occurred during signup',
+          'Signup Unknown Error'
+        );
+      }
+      
+      console.error('Signup error:', appError);
+      throw appError;
     } finally {
       setIsLoading(false);
     }
@@ -212,7 +332,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    setUserLRN(null);
     localStorage.removeItem('currentUser');
     signOut(auth);
   };
@@ -227,18 +346,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Object.entries(updates).filter(([_, v]) => v !== undefined)
       );
       await updateDoc(doc(db, 'users', user.id), filteredUpdates);
-      setUser({ ...user, ...updates });
-      if (updates.lrn !== undefined) setUserLRN(updates.lrn || null);
-      if (updates.avatarUrl !== undefined) setUser({ ...user, ...updates });
-      if (updates.bio !== undefined) setUser({ ...user, ...updates });
-      if (updates.contactNo !== undefined) setUser({ ...user, ...updates });
-      if (updates.age !== undefined) setUser({ ...user, ...updates });
-      if (updates.employeeNumber !== undefined) setUser({ ...user, ...updates });
-      if (updates.facebook !== undefined) setUser({ ...user, ...updates });
-      if (updates.lastLogin !== undefined) setUser({ ...user, ...updates });
-      if (updates.gender !== undefined) setUser({ ...user, ...updates });
-      if (updates.gradeLevel !== undefined) setUser({ ...user, ...updates });
-      localStorage.setItem('currentUser', JSON.stringify({ ...user, ...updates }));
+      const updatedUser = { ...user, ...updates, updatedAt: new Date().toISOString() };
+      setUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       return true;
     } catch (error) {
       console.error('Update user error:', error);
@@ -272,7 +382,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Delete the Firebase Auth user account
       await deleteUser(auth.currentUser);
       setUser(null);
-      setUserLRN(null);
       localStorage.removeItem('currentUser');
       return true;
     } catch (error) {
@@ -287,11 +396,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return false;
     setIsLoading(true);
     try {
-      // Delete all user data (grades, sections, connections)
+      // Delete all user data (harvests, bids, transactions)
       await deleteAllUserData(user.id);
       await deleteDoc(doc(db, 'users', user.id));
       setUser(null);
-      setUserLRN(null);
       localStorage.removeItem('currentUser');
       await signOut(auth);
       return true;
@@ -306,7 +414,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user,
-      userLRN,
       login,
       signup,
       logout,

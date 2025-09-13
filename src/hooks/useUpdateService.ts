@@ -54,32 +54,31 @@ export function useUpdateService() {
     updateService.onUpdateAvailable(handleUpdateAvailable);
     updateService.onUpdateApplied(handleUpdateApplied);
 
-    // Initial check for updates
+    // Enable automatic update checking
     checkForUpdates();
 
-    // Set up periodic update checks (every 30 minutes)
+    // Periodic update checks every 30 minutes
     const interval = setInterval(checkForUpdates, 30 * 60 * 1000);
 
     return () => {
       clearInterval(interval);
     };
-  }, [checkForUpdates]);
+  }, []);
 
-  // Auto-check for updates when app becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !isChecking) {
-        // Check for updates when app becomes visible (after 5 minutes of inactivity)
-        const timeSinceLastCheck = lastChecked ? Date.now() - lastChecked.getTime() : Infinity;
-        if (timeSinceLastCheck > 5 * 60 * 1000) {
-          checkForUpdates();
-        }
+  // Check for updates when app becomes visible (after 5 minutes of inactivity)
+  const handleVisibilityChange = () => {
+    if (!document.hidden && !isChecking) {
+      const timeSinceLastCheck = lastChecked ? Date.now() - lastChecked.getTime() : Infinity;
+      if (timeSinceLastCheck > 5 * 60 * 1000) {
+        checkForUpdates();
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [checkForUpdates, isChecking, lastChecked]);
+  }, []);
 
   return {
     updateInfo,

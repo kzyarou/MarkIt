@@ -542,151 +542,174 @@ export default function AuthPage() {
         </motion.div>
       </div>
       {/* Logo and EduHub text at the top */}
-      <div className="flex flex-col items-center pt-16 pb-4 relative z-10">
+      <div className="flex flex-col items-center pt-16 pb-4 relative z-10 md:hidden">
         <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-28 h-28 mb-3 animate-float filter invert brightness-200" />
         <span className="text-blue-700 dark:text-white text-5xl font-extrabold tracking-widest mb-1 drop-shadow">EducHub</span>
         <span className="text-base text-blue-600 dark:text-slate-200 font-medium text-center drop-shadow">Smart Tools for Smarter Schools</span>
       </div>
       {/* Glassmorphism card for login/signup */}
-      <div className={`flex-1 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${cardTransition}`}
+      <div className={`flex-1 w-full transition-all duration-500 ease-in-out ${cardTransition}`}
         style={{ willChange: 'opacity, transform' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="w-full max-w-md py-12 px-8 flex flex-col gap-10 relative z-10 -mt-4"
-        >
-                      <div className="text-center mb-2">
-              <span className="text-2xl font-bold text-blue-900 dark:text-white drop-shadow">{mode === 'login' ? 'Login in to your account' : 'Create your Account'}</span>
+        <div className="w-full">
+          <div className="mx-auto w-full md:max-w-6xl md:grid md:grid-cols-[1fr_auto_1fr] md:gap-12 md:items-center md:py-16">
+            <div className="md:col-span-1">
+              <div className="hidden md:flex flex-col gap-6 pl-8 md:items-center md:text-center">
+                <div className="flex items-center gap-3">
+                  <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-10 h-10 filter invert brightness-200" />
+                  <span className="text-blue-900 dark:text-white text-3xl lg:text-4xl font-extrabold tracking-wider">EducHub</span>
+                </div>
+                <h2 className="text-5xl lg:text-6xl font-extrabold text-blue-900 dark:text-white drop-shadow">Welcome back</h2>
+                <p className="text-xl text-blue-800/80 dark:text-slate-300 max-w-md">Sign in to manage grades, attendance, and reports faster.</p>
+                <ul className="text-base text-blue-900/80 dark:text-slate-300 space-y-2">
+                  <li>• DepEd-compliant grading</li>
+                  <li>• Attendance tracking</li>
+                  <li>• Report cards and analytics</li>
+                </ul>
+              </div>
             </div>
-          {mode === 'login' ? (
-            <form className="flex flex-col gap-4" onSubmit={handleLogin}>
-              <input
-                type="email"
-                placeholder="Email"
-                className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium"
-                value={loginData.email}
-                onChange={e => setLoginData({ ...loginData, email: e.target.value.trimStart() })}
-                required
-              />
-              <div className="relative">
-                <input
-                  type={showLoginPassword ? "text" : "password"}
-                  placeholder="Password"
-                  className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
-                  value={loginData.password}
-                  onChange={e => setLoginData({ ...loginData, password: e.target.value })}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-transparent"
-                  tabIndex={-1}
-                  onClick={() => setShowLoginPassword(v => !v)}
-                  aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
-                >
-                  <img src={showLoginPassword ? "/book-open-svgrepo-com.svg" : "/book-svgrepo-com.svg"} alt={showLoginPassword ? 'Hide password' : 'Show password'} className="w-7 h-7 opacity-80" />
-                </button>
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-blue-700 hover:to-blue-600 transition text-lg tracking-wide"
-                disabled={isLoading}
+            {/* Vertical Divider (desktop only) */}
+            <div className="hidden md:block h-full w-px bg-blue-200/60 dark:bg-slate-700/60 md:justify-self-center" aria-hidden="true" />
+            <div className="md:col-span-1">
+              <motion.div
+                initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className="w-full max-w-md md:ml-auto py-12 px-8 flex flex-col gap-10 relative z-10"
               >
-                {isLoading ? 'Signing In...' : 'Sign in'}
-              </button>
-            </form>
-          ) : (
-            <form className="flex flex-col gap-4" onSubmit={handleFinalSignup}>
-              <input
-                type="email"
-                placeholder="Email"
-                className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium"
-                value={signupData.email}
-                onChange={e => setSignupData({ ...signupData, email: e.target.value.trimStart() })}
-                required
-              />
-              <div className="relative">
-                <input
-                  type={showSignupPassword ? "text" : "password"}
-                  placeholder="Password"
-                  className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
-                  value={signupData.password}
-                  onChange={e => setSignupData({ ...signupData, password: e.target.value })}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-transparent"
-                  tabIndex={-1}
-                  onClick={() => setShowSignupPassword(v => !v)}
-                  aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
-                >
-                  <img src={showSignupPassword ? "/book-open-svgrepo-com.svg" : "/book-svgrepo-com.svg"} alt={showSignupPassword ? 'Hide password' : 'Show password'} className="w-7 h-7 opacity-80" />
-                </button>
+              <div className="text-center mb-2">
+                <span className="text-2xl md:text-3xl font-bold text-blue-900 dark:text-white drop-shadow">{mode === 'login' ? 'Login in to your account' : 'Create your Account'}</span>
               </div>
-              <div className="relative">
-                <input
-                  type={showSignupConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm Password"
-                  className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
-                  value={signupData.confirmPassword}
-                  onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-transparent"
-                  tabIndex={-1}
-                  onClick={() => setShowSignupConfirmPassword(v => !v)}
-                  aria-label={showSignupConfirmPassword ? 'Hide password' : 'Show password'}
-                >
-                  <img src={showSignupConfirmPassword ? "/book-open-svgrepo-com.svg" : "/book-svgrepo-com.svg"} alt={showSignupConfirmPassword ? 'Hide password' : 'Show password'} className="w-7 h-7 opacity-80" />
-                </button>
+              {mode === 'login' ? (
+                <form className="flex flex-col gap-4" onSubmit={handleLogin}>
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium"
+                    value={loginData.email}
+                    onChange={e => setLoginData({ ...loginData, email: e.target.value.trimStart() })}
+                    required
+                  />
+                  <div className="relative">
+                    <input
+                      type={showLoginPassword ? "text" : "password"}
+                      placeholder="Password"
+                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
+                      value={loginData.password}
+                      onChange={e => setLoginData({ ...loginData, password: e.target.value })}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-transparent"
+                      tabIndex={-1}
+                      onClick={() => setShowLoginPassword(v => !v)}
+                      aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <img src={showLoginPassword ? "/book-open-svgrepo-com.svg" : "/book-svgrepo-com.svg"} alt={showLoginPassword ? 'Hide password' : 'Show password'} className="w-7 h-7 opacity-80" />
+                    </button>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-blue-700 hover:to-blue-600 transition text-lg tracking-wide"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Signing In...' : 'Sign in'}
+                  </button>
+                </form>
+              ) : (
+                <form className="flex flex-col gap-4" onSubmit={handleFinalSignup}>
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium"
+                    value={signupData.email}
+                    onChange={e => setSignupData({ ...signupData, email: e.target.value.trimStart() })}
+                    required
+                  />
+                  <div className="relative">
+                    <input
+                      type={showSignupPassword ? "text" : "password"}
+                      placeholder="Password"
+                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
+                       value={signupData.password}
+                      onChange={e => setSignupData({ ...signupData, password: e.target.value })}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-transparent"
+                      tabIndex={-1}
+                      onClick={() => setShowSignupPassword(v => !v)}
+                      aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <img src={showSignupPassword ? "/book-open-svgrepo-com.svg" : "/book-svgrepo-com.svg"} alt={showSignupPassword ? 'Hide password' : 'Show password'} className="w-7 h-7 opacity-80" />
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showSignupConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm Password"
+                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
+                       value={signupData.confirmPassword}
+                      onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-transparent"
+                      tabIndex={-1}
+                      onClick={() => setShowSignupConfirmPassword(v => !v)}
+                      aria-label={showSignupConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <img src={showSignupConfirmPassword ? "/book-open-svgrepo-com.svg" : "/book-svgrepo-com.svg"} alt={showSignupConfirmPassword ? 'Hide password' : 'Show password'} className="w-7 h-7 opacity-80" />
+                    </button>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-blue-700 hover:to-blue-500 transition text-lg tracking-wide"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Signing Up...' : 'Sign up'}
+                  </button>
+                </form>
+              )}
+              {/* Terms of Agreement Notice */}
+              <div className="text-center text-xs text-slate-600 dark:text-slate-300 my-2">
+                By signing in or creating an account, you agree to our
+                <a href="/terms" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                and
+                <a href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
               </div>
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-blue-700 hover:to-blue-500 transition text-lg tracking-wide"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Signing Up...' : 'Sign up'}
-              </button>
-            </form>
-          )}
-          {/* Terms of Agreement Notice */}
-          <div className="text-center text-xs text-slate-600 dark:text-slate-300 my-2">
-            By signing in or creating an account, you agree to our
-            <a href="/terms" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Terms of Service</a>
-            and
-            <a href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+              <div className="text-center text-base text-slate-700 dark:text-slate-200 mt-4">
+                {mode === 'login' ? (
+                  <>Don&apos;t have an account?{' '}
+                    <span
+                      className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
+                      onClick={() => setMode('signup')}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      Sign up
+                    </span>
+                  </>
+                ) : (
+                  <>Already have an account?{' '}
+                    <span
+                      className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
+                      onClick={() => setMode('login')}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      Sign in
+                    </span>
+                  </>
+                )}
+              </div>
+              </motion.div>
+            </div>
+            </div>
           </div>
-          <div className="text-center text-base text-slate-700 dark:text-slate-200 mt-4">
-            {mode === 'login' ? (
-              <>Don&apos;t have an account?{' '}
-                <span
-                  className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
-                  onClick={() => setMode('signup')}
-                  role="button"
-                  tabIndex={0}
-                >
-                  Sign up
-                </span>
-              </>
-            ) : (
-              <>Already have an account?{' '}
-                <span
-                  className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
-                  onClick={() => setMode('login')}
-                  role="button"
-                  tabIndex={0}
-                >
-                  Sign in
-                </span>
-              </>
-            )}
-          </div>
-        </motion.div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

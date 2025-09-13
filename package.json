@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "generate-pwa-assets": "node scripts/generate-pwa-assets.js",
     "sync:mobile": "npx cap sync",
     "build:android": "npm run build:mobile && npx cap build android",
+    "build:android:signed": "npm run build:mobile && npx cap sync && cd android && ./gradlew assembleRelease && cd ..",
     "build:ios": "npm run build:mobile && npx cap build ios",
     "open:android": "npx cap open android",
     "open:ios": "npx cap open ios"

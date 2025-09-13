@@ -18,7 +18,7 @@ export default function DataPrivacyPage() {
           <h1 className="text-2xl font-extrabold tracking-tight">Data Privacy Terms</h1>
         </div>
         <div className="space-y-6 text-base max-w-2xl mx-auto">
-          <p><b>EducHub</b> values your privacy and is committed to protecting your personal data. This page explains what data we collect, how it is used, and your rights as a user.</p>
+          <p><b>MarkIt</b> values your privacy and is committed to protecting your personal data. This page explains what data we collect, how it is used, and your rights as a user.</p>
           <h2 className="text-lg font-bold mt-4">1. What Data We Collect</h2>
           <ul className="list-disc ml-6">
             <li><b>Account Information:</b> Name, email address, and profile details.</li>

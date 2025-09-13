@@ -188,7 +188,7 @@ export function SubjectManager({ isOpen, onClose, subjects, onSubjectsChange }: 
          <DialogHeader>
            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
              <BookOpen className="w-5 h-5 text-primary" />
-             Manage Subjects - EducHub
+             Manage Subjects - MarkIt
            </DialogTitle>
            <DialogDescription>
              Add, edit, or remove subjects for this section. Adjust weights and details as needed.

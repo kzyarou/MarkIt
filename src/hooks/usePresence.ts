@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { db } from '@/lib/firebase'
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
+import { cacheService } from '@/services/cacheService'
 
 function getDeviceString(): string {
 	if (typeof navigator === 'undefined') return 'Unknown Device'
@@ -21,30 +22,46 @@ function getDeviceString(): string {
 export function usePresence() {
 	const { user } = useAuth()
 	const deviceRef = useRef<string>(getDeviceString())
+	const lastUpdateRef = useRef<number>(0)
+	const UPDATE_THROTTLE = 30000 // 30 seconds throttle
 
 	useEffect(() => {
 		if (!user?.id) return
 		const userRef = doc(db, 'users', user.id)
 
 		const setOnline = async () => {
+			const now = Date.now()
+			if (now - lastUpdateRef.current < UPDATE_THROTTLE) return
+			
 			try {
 				await updateDoc(userRef, {
 					status: 'online',
 					lastSeen: serverTimestamp(),
 					device: deviceRef.current,
 				})
+				lastUpdateRef.current = now
+				
+				// Invalidate user cache to reflect status change
+				cacheService.invalidateUserData(user.id)
 			} catch (e) {
 				// ignore
 			}
 		}
 
 		const setOffline = async () => {
+			const now = Date.now()
+			if (now - lastUpdateRef.current < UPDATE_THROTTLE) return
+			
 			try {
 				await updateDoc(userRef, {
 					status: 'offline',
 					lastSeen: serverTimestamp(),
 					device: deviceRef.current,
 				})
+				lastUpdateRef.current = now
+				
+				// Invalidate user cache to reflect status change
+				cacheService.invalidateUserData(user.id)
 			} catch (e) {
 				// ignore
 			}

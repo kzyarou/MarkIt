@@ -62,8 +62,8 @@ export const UPDATE_CONFIG = {
 // Environment-specific overrides
 if (process.env.NODE_ENV === 'development') {
   UPDATE_CONFIG.general.debug = true;
-  UPDATE_CONFIG.pwa.checkInterval = 5 * 60 * 1000; // 5 minutes in dev
-  UPDATE_CONFIG.codePush.checkInterval = 5 * 60 * 1000; // 5 minutes in dev
+  UPDATE_CONFIG.pwa.checkInterval = 2 * 60 * 1000; // 2 minutes in dev for testing
+  UPDATE_CONFIG.codePush.checkInterval = 2 * 60 * 1000; // 2 minutes in dev for testing
 }
 
 export default UPDATE_CONFIG; 

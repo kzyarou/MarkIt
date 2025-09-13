@@ -10,7 +10,7 @@ import { DepEdReportCard } from '@/components/DepEdReportCard';
 import { GradesService } from '@/services/gradesService';
 import { useTheme } from 'next-themes';
 import { DepEdClassRecord } from '@/components/DepEdClassRecord';
-import EducHubHeader from '@/components/EducHubHeader';
+import MarkItHeader from '@/components/MarkItHeader';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBottomNav } from '@/hooks/use-mobile';
@@ -26,6 +26,7 @@ export default function ReportsPage() {
   const [gradesHidden, setGradesHidden] = useState(false);
   const [togglingGrades, setTogglingGrades] = useState(false);
   const [showClassRecord, setShowClassRecord] = useState(false);
+  const [showStudents, setShowStudents] = useState(false);
   // Add state for selected subject
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   // Teacher name for ECR
@@ -111,6 +112,7 @@ export default function ReportsPage() {
   const viewSectionStudents = (section: Section) => {
     setSelectedSection(section);
     setSelectedStudent(null);
+    setShowStudents(true);
   };
 
   const viewStudentReportCard = (student: Student) => {
@@ -156,17 +158,127 @@ export default function ReportsPage() {
     );
   }
 
+  if (selectedSection && !showReportCard && !showClassRecord && showStudents) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <MarkItHeader subtitle="Reports" />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <Button 
+              onClick={() => setShowStudents(false)} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Subjects
+            </Button>
+          </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Students in {selectedSection.name}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Grade {selectedSection.gradeLevel} • {selectedSection.students.length} students
+            </p>
+          </div>
+          {selectedSection.students.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No students in this section</h3>
+                <p className="text-gray-600 dark:text-gray-400">Add students to this section to view their cards.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {selectedSection.students.map(student => (
+                <Card key={student.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{student.name}</h3>
+                        {student.lrn && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">LRN: {student.lrn}</p>
+                        )}
+                      </div>
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Gender:</span>
+                      <span className="font-medium text-gray-900 dark:text-white capitalize">
+                        {student.gender || 'Not specified'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Subjects:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {selectedSection.subjects.length}
+                      </span>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => viewStudentReportCard(student)}
+                        className="w-full"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View Cards
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   if (selectedSection && !showReportCard && !showClassRecord) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <EducHubHeader subtitle="Reports" />
+        <MarkItHeader subtitle="Reports" />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <Button 
+              onClick={() => setSelectedSection(null)} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Reports
+            </Button>
+          </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Subjects in {selectedSection.name}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Grade {selectedSection.gradeLevel} • {selectedSection.subjects.length} subjects • {selectedSection.students.length} students
+            </p>
+          </div>
+          
+          <div className="mb-6">
+            <Button 
+              onClick={() => setShowStudents(true)} 
+              variant="default" 
+              className="flex items-center gap-2"
+            >
+              <Users className="w-4 h-4" />
+              View All Students
+            </Button>
+          </div>
+
           {selectedSection.subjects.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
                 <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No subjects in this section</h3>
-                <p className="text-gray-600">Add subjects to this section to view reports.</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No subjects in this section</h3>
+                <p className="text-gray-600 dark:text-gray-400">Add subjects to this section to view reports.</p>
               </CardContent>
             </Card>
           ) : (
@@ -174,7 +286,7 @@ export default function ReportsPage() {
               {selectedSection.subjects.map(subject => (
                 <Card key={subject.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
-                    <CardTitle>{subject.name}</CardTitle>
+                    <CardTitle className="text-gray-900 dark:text-white">{subject.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-2">
                     <Button variant="outline" onClick={() => {/* TODO: View students for this subject */}} className="w-full">View Students</Button>
@@ -191,7 +303,7 @@ export default function ReportsPage() {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
-      <EducHubHeader subtitle="Reports" />
+      <MarkItHeader subtitle="Reports" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="min-h-screen flex items-center justify-center">

@@ -12,7 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import EducHubHeader from '@/components/EducHubHeader';
+import MarkItHeader from '@/components/MarkItHeader';
 import { useBottomNav } from '@/hooks/use-mobile';
 
 interface MockUser {
@@ -93,7 +93,7 @@ export default function SearchPage() {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
-      <EducHubHeader subtitle="Search" />
+      <MarkItHeader subtitle="Search" />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Form */}
@@ -174,7 +174,7 @@ export default function SearchPage() {
             <CardContent>
               <div className="space-y-4">
                 {searchResults.map((user) => {
-                  const isAdmin = user.email === 'zacharyrapiz@gmail.com' || user.role === 'admin'
+                  const isAdmin = user.email === 'zacharythanos@gmail.com' || user.role === 'admin'
                   return (
                     <div key={user.id} className={`p-4 border rounded-lg hover:bg-accent ${isAdmin ? 'border-red-500/60 bg-red-50 dark:bg-red-950/30' : ''}`}>
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">

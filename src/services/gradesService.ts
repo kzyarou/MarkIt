@@ -11,8 +11,11 @@ import {
   deleteDoc,
   query,
   where,
-  addDoc
+  addDoc,
+  writeBatch,
+  limit
 } from "firebase/firestore";
+import { cacheService } from "./cacheService";
 
 // Mock data storage
 let grades: Grade[] = [];
@@ -24,20 +27,37 @@ sections = [];
 
 export class GradesService {
   static async getGradesForUser(userId: string, includeHidden = false): Promise<Grade[]> {
+    const cacheKey = `student_grades_${userId}_${includeHidden}`;
+    
+    // Check cache first
+    const cachedGrades = cacheService.get<Grade[]>(cacheKey);
+    if (cachedGrades) {
+      return cachedGrades;
+    }
+
     const gradesRef = collection(db, "grades");
-    let q = query(gradesRef, where("userId", "==", userId));
+    let q = query(gradesRef, where("userId", "==", userId), limit(100)); // Limit to prevent large reads
     const snapshot = await getDocs(q);
     let grades = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Grade));
     if (!includeHidden) {
       grades = grades.filter(grade => !grade.hidden);
     }
+    
+    // Cache the results
+    cacheService.set(cacheKey, grades, 3 * 60 * 1000); // 3 minutes cache
+    
     return grades;
   }
 
   static async saveGrade(grade: Omit<Grade, 'id'>): Promise<Grade> {
     const gradesRef = collection(db, "grades");
     const docRef = await addDoc(gradesRef, grade);
-    return { ...grade, id: docRef.id };
+    const savedGrade = { ...grade, id: docRef.id };
+    
+    // Invalidate cache for this user
+    cacheService.invalidateUserData(grade.userId);
+    
+    return savedGrade;
   }
 
   static async syncGradesFromSection(
@@ -47,13 +67,18 @@ export class GradesService {
     section: Section,
     hidden = false
   ): Promise<void> {
+    // Use batch operations for better performance
+    const batch = writeBatch(db);
+    
     // Remove existing grades for this user in this section
     const gradesRef = collection(db, "grades");
-    const q = query(gradesRef, where("userId", "==", userId), where("sectionId", "==", sectionId));
+    const q = query(gradesRef, where("userId", "==", userId), where("sectionId", "==", sectionId), limit(50));
     const snapshot = await getDocs(q);
-    for (const docSnap of snapshot.docs) {
-      await deleteDoc(doc(db, "grades", docSnap.id));
-    }
+    
+    // Add deletions to batch
+    snapshot.docs.forEach(docSnap => {
+      batch.delete(doc(db, "grades", docSnap.id));
+    });
 
     // Convert section-based grades to user-based grades
     for (const subject of section.subjects) {
@@ -75,7 +100,10 @@ export class GradesService {
               createdAt: new Date().toISOString(),
               hidden: hidden || false // Ensure not hidden by default
             };
-            await this.saveGrade(grade);
+            
+            // Add to batch instead of individual save
+            const gradeRef = doc(gradesRef);
+            batch.set(gradeRef, grade);
             if (import.meta.env.MODE === 'development') {
               console.log('[syncGradesFromSection] Saved grade:', grade);
             }
@@ -83,18 +111,33 @@ export class GradesService {
         }
       }
     }
+    
+    // Commit all batch operations
+    await batch.commit();
+    
+    // Invalidate cache for this user
+    cacheService.invalidateUserData(userId);
+    
     if (import.meta.env.MODE === 'development') {
       console.log('[syncGradesFromSection] Finished syncing grades for user', userId, 'section', sectionId);
     }
   }
 
   static async toggleGradesVisibility(userId: string, sectionId: string, hidden: boolean): Promise<void> {
+    const batch = writeBatch(db);
     const gradesRef = collection(db, "grades");
-    const q = query(gradesRef, where("userId", "==", userId), where("sectionId", "==", sectionId));
+    const q = query(gradesRef, where("userId", "==", userId), where("sectionId", "==", sectionId), limit(50));
     const snapshot = await getDocs(q);
-    for (const docSnap of snapshot.docs) {
-      await updateDoc(doc(db, "grades", docSnap.id), { hidden });
-    }
+    
+    // Add updates to batch
+    snapshot.docs.forEach(docSnap => {
+      batch.update(doc(db, "grades", docSnap.id), { hidden });
+    });
+    
+    await batch.commit();
+    
+    // Invalidate cache for this user
+    cacheService.invalidateUserData(userId);
   }
 
   static async debugGradeSync(userId: string, sectionId: string): Promise<any> {
@@ -227,27 +270,57 @@ export class StudentUserService {
 
 // Firestore-based section CRUD
 export async function getSections(): Promise<Section[]> {
+  // Check cache first
+  const cachedSections = cacheService.get<Section[]>('sections');
+  if (cachedSections) {
+    return cachedSections;
+  }
+
   const sectionsRef = collection(db, "sections");
-  const snapshot = await getDocs(sectionsRef);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
+  const q = query(sectionsRef, limit(100)); // Limit to prevent large reads
+  const snapshot = await getDocs(q);
+  const sections = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
+  
+  // Cache the results
+  cacheService.set('sections', sections, 5 * 60 * 1000); // 5 minutes cache
+  
+  return sections;
 }
 
 // Get sections handled/created by a specific teacher
 export async function getTeacherSections(teacherUserId: string): Promise<Section[]> {
+  // Check cache first
+  const cacheKey = `teacher_sections_${teacherUserId}`;
+  const cachedSections = cacheService.get<Section[]>(cacheKey);
+  if (cachedSections) {
+    return cachedSections;
+  }
+
   const sectionsRef = collection(db, "sections");
-  const q = query(sectionsRef, where("createdBy", "==", teacherUserId));
+  const q = query(sectionsRef, where("createdBy", "==", teacherUserId), limit(50));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
+  const sections = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Section));
+  
+  // Cache the results
+  cacheService.set(cacheKey, sections, 5 * 60 * 1000);
+  
+  return sections;
 }
 
 export async function saveSection(section: Section): Promise<void> {
   const sectionRef = doc(db, "sections", section.id);
   await setDoc(sectionRef, section);
+  
+  // Invalidate cache
+  cacheService.invalidateSectionData(section.id);
 }
 
 export async function deleteSection(sectionId: string): Promise<void> {
   const sectionRef = doc(db, "sections", sectionId);
   await deleteDoc(sectionRef);
+  
+  // Invalidate cache
+  cacheService.invalidateSectionData(sectionId);
 }
 
 export async function deleteAllUserData(userId: string): Promise<void> {

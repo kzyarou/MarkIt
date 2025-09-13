@@ -25,7 +25,7 @@ export interface Subject {
 export interface ScoreEntry {
   id: string;
   name: string;
-  score: number;
+  score: number | null;
   totalPoints: number;
 }
 

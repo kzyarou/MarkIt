@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.kzyarou.educhub',
-  appName: 'EducHub',
+  appName: 'MarkIt',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

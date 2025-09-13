@@ -17,32 +17,42 @@ export const DraftsProvider = ({ children }: { children: ReactNode }) => {
   const [drafts, setDrafts] = useState<Section[]>([]);
 
   const refreshDrafts = () => {
-    if (user) {
+    if (user && user.id) {
       const loaded = listDrafts<Section>(user.id, 'section').map(d => d.data);
-      console.log('Refreshing drafts:', loaded);
+      console.log('Refreshing drafts for user:', user.id, 'loaded:', loaded);
       setDrafts(loaded);
       window.dispatchEvent(new Event('drafts-updated'));
+    } else {
+      console.log('No user or user.id available for drafts refresh');
+      setDrafts([]);
     }
   };
 
   const saveDraft = (section: Section) => {
-    if (user) {
+    if (user && user.id) {
+      console.log('Saving draft for user:', user.id, 'section:', section.id);
       saveDraftToStorage(user.id, 'section', section.id, section);
       refreshDrafts();
+    } else {
+      console.error('Cannot save draft: no user or user.id available');
     }
   };
 
   const deleteDraft = (sectionId: string) => {
-    if (user) {
+    if (user && user.id) {
+      console.log('Deleting draft for user:', user.id, 'section:', sectionId);
       deleteDraftFromStorage(user.id, 'section', sectionId);
       refreshDrafts();
+    } else {
+      console.error('Cannot delete draft: no user or user.id available');
     }
   };
 
   useEffect(() => {
+    console.log('DraftsContext: user changed, refreshing drafts. User:', user);
     refreshDrafts();
     // eslint-disable-next-line
-  }, [user]);
+  }, [user?.id]);
 
   console.log('DraftsProvider render, drafts:', drafts);
   return (

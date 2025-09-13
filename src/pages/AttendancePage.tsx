@@ -9,7 +9,7 @@ import { getSections } from '@/services/gradesService';
 import { saveAttendanceRecord, getAttendanceForSection, AttendanceRecord } from '@/services/attendanceService';
 import { listDrafts, saveDraft, deleteDraft } from '@/utils/localDrafts';
 import { useTheme } from 'next-themes';
-import EducHubHeader from '@/components/EducHubHeader';
+import MarkItHeader from '@/components/MarkItHeader';
 import { useBottomNav } from '@/hooks/use-mobile';
 
 export default function AttendancePage() {
@@ -128,7 +128,7 @@ export default function AttendancePage() {
         </div>
       ) : (
         <>
-          <EducHubHeader subtitle="Attendance" />
+          <MarkItHeader subtitle="Attendance" />
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {!selectedSection ? (

@@ -38,8 +38,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'EducHub',
-        short_name: 'EducHub',
+        name: 'MarkIt',
+        short_name: 'MarkIt',
         description: 'Academic Management Platform',
         theme_color: '#2563eb',
         background_color: '#ffffff',

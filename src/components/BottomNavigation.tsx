@@ -6,8 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
-  { id: 'sections', icon: Users, path: '/' },
-  { id: 'reports', icon: FileText, path: '/reports' },
+  { id: 'homepage', icon: Users, path: '/' },
+  { id: 'mydashboard', icon: FileText, path: '/mydashboard' },
   { id: 'search', icon: Search, path: '/search' },
   { id: 'profile', icon: User, path: '/profile' },
   { id: 'settings', icon: Settings, path: '/settings' },
@@ -21,21 +21,25 @@ export function BottomNavigation() {
 
   // Determine nav items based on user role
   let navItems = [
-    { id: 'sections', icon: Users, path: '/' },
-    { id: 'reports', icon: FileText, path: '/reports' },
-    { id: 'search', icon: Search, path: '/search' },
-    { id: 'profile', icon: User, path: '/profile' },
+    { id: 'homepage', icon: Users, path: '/' },
+    { id: 'mydashboard', icon: FileText, path: '/mydashboard' },
     { id: 'settings', icon: Settings, path: '/settings' },
   ];
 
   if (user?.role === 'student') {
     navItems = [
-      { id: 'sections', icon: Users, path: '/' },
+      { id: 'homepage', icon: Users, path: '/' },
+      { id: 'mydashboard', icon: FileText, path: '/mydashboard' },
       { id: 'calculator', icon: Calculator, path: '/calculator' },
-      { id: 'profile', icon: User, path: '/profile' },
       { id: 'settings', icon: Settings, path: '/settings' },
     ];
-  }
+    } else if (user?.role === 'admin') {
+     // Admin users: show Admin tab, hide Sections and Reports
+     navItems = [
+       { id: 'admin', icon: Settings, path: '/admin' },
+       { id: 'settings', icon: Settings, path: '/settings' },
+     ];
+   }
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -52,7 +56,7 @@ export function BottomNavigation() {
   const activeColor = isDark ? '#3d4e5e' : '#3b82f6';
   const inactiveColor = isDark ? '#e2e8f0' : '#1f2937';
 
-  const gridCols = navItems.length === 4 ? 'grid-cols-4' : 'grid-cols-5';
+  const gridCols = navItems.length === 2 ? 'grid-cols-2' : navItems.length === 3 ? 'grid-cols-3' : 'grid-cols-4';
 
   return (
     <motion.nav

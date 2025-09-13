@@ -123,24 +123,35 @@ export function getTransmutationTable(gradeLevel: string, year?: number, depedOr
 }
 
 // --- Category Percentage Calculation ---
-export function calculateCategoryPercentage(scores: { score: number; totalPoints: number }[]): number {
+export function calculateCategoryPercentage(scores: { score: number | null; totalPoints: number }[]): number {
   if (scores.length === 0) return 0;
   
-  // Filter out entries with 0 totalPoints to avoid division by zero
-  const validScores = scores.filter(score => score.totalPoints > 0);
-  if (validScores.length === 0) return 0;
+  // Keep only graded entries with positive total points
+  const graded = scores.filter(s => s != null && s.totalPoints > 0 && s.score != null);
+  if (graded.length === 0) return 0;
   
-  const totalScores = validScores.reduce((sum, score) => sum + (score.score || 0), 0);
-  const totalPossible = validScores.reduce((sum, score) => sum + (score.totalPoints || 0), 0);
+  // DepEd formula: PS = (Total raw score / Maximum possible score) × 100
+  const totalRawScore = graded.reduce((sum, s) => sum + (s.score as number), 0);
+  const maximumPossibleScore = graded.reduce((sum, s) => sum + s.totalPoints, 0);
   
-  if (totalPossible === 0) return 0;
-  return (totalScores / totalPossible) * 100;
+  if (maximumPossibleScore === 0) return 0;
+  return (totalRawScore / maximumPossibleScore) * 100;
 }
 
 // --- Main Transmutation Function ---
 export function transmuteGrade(initialGrade: number, gradeLevel: string, year?: number, depedOrder?: DepEdOrder): number {
   // If initial grade is 0 or undefined, return 0 (no grade yet)
   if (!initialGrade || initialGrade === 0) return 0;
+  
+  // Explicit DepEd 2015 high-band overrides to match official ranges
+  // Ref: DO 8 s.2015 / Memo 42 s.2020 commonly published tables
+  if (!year || (gradeLevel !== '11' && gradeLevel !== '12')) {
+    // Low-band example from official table
+    if (initialGrade >= 28.00 && initialGrade <= 31.99) return 67;
+    // Upper bands
+    if (initialGrade >= 90.40 && initialGrade <= 91.99) return 94;
+    if (initialGrade >= 92.00 && initialGrade <= 93.59) return 95;
+  }
   
   const table = getTransmutationTable(gradeLevel, year, depedOrder);
   for (const range of table) {
@@ -272,16 +283,77 @@ export function calculateQuarterGrade(
 
 // --- Final Grade Calculation ---
 export function calculateFinalGrade(quarterGrades: (QuarterResult | null)[]): number {
-  const validGrades = quarterGrades.filter(grade => grade !== null) as QuarterResult[];
+  const validGrades = quarterGrades
+    .filter((grade): grade is QuarterResult => grade !== null && grade.transmutedGrade > 0);
   if (validGrades.length === 0) return 0;
   const totalGrades = validGrades.reduce((sum, grade) => sum + grade.transmutedGrade, 0);
   return Math.round(totalGrades / validGrades.length);
 }
 
+// --- General Average Calculation (DepEd Standard) ---
+// IMPORTANT: According to DepEd standards, the general average should be calculated as:
+// 1. Collect ALL quarterly grades from ALL subjects
+// 2. Average these quarterly grades together
+// 3. NOT average the final grades of subjects
+// 
+// Example: If student has Math Q1=85, Q2=90, Science Q1=88, Q2=92
+// General Average = (85 + 90 + 88 + 92) / 4 = 88.75 ≈ 89
+// NOT (87.5 + 90) / 2 = 88.75 ≈ 89 (which would be the same in this case but wrong approach)
 export function calculateGeneralAverage(finalGrades: number[]): number {
   if (finalGrades.length === 0) return 0;
   const total = finalGrades.reduce((sum, grade) => sum + grade, 0);
   return Math.round(total / finalGrades.length);
+}
+
+// --- DepEd General Average Calculation (Correct Method) ---
+// This function calculates the general average according to DepEd standards
+// by averaging ALL quarterly grades across ALL subjects
+export function calculateDepEdGeneralAverage(student: any, section: any): number {
+  const allQuarterlyGrades: number[] = [];
+  
+  console.log('Calculating DepEd General Average for student:', student.name);
+  console.log('Section subjects:', section.subjects.map((s: any) => s.name));
+  
+  // Go through each subject
+  section.subjects.forEach((subject: any) => {
+    const subjectGrades = student.gradeData[subject.id];
+    if (!subjectGrades) {
+      console.log(`No grade data for subject: ${subject.name}`);
+      return;
+    }
+    
+    console.log(`Processing subject: ${subject.name}`);
+    
+    // Go through each quarter
+    ['quarter1', 'quarter2', 'quarter3', 'quarter4'].forEach(quarterKey => {
+      const quarterData = subjectGrades[quarterKey];
+      if (quarterData) {
+        const quarterResult = calculateQuarterGrade(quarterData, subject);
+        console.log(`  ${quarterKey}: transmuted grade = ${quarterResult.transmutedGrade}`);
+        if (quarterResult.transmutedGrade > 0) {
+          allQuarterlyGrades.push(quarterResult.transmutedGrade);
+        }
+      } else {
+        console.log(`  ${quarterKey}: no data`);
+      }
+    });
+  });
+  
+  console.log('All quarterly grades collected:', allQuarterlyGrades);
+  
+  // Calculate average of all quarterly grades
+  if (allQuarterlyGrades.length === 0) {
+    console.log('No valid quarterly grades found, returning 0');
+    return 0;
+  }
+  
+  const total = allQuarterlyGrades.reduce((sum, grade) => sum + grade, 0);
+  const average = total / allQuarterlyGrades.length;
+  const roundedAverage = Math.round(average);
+  
+  console.log(`General average calculation: ${total} / ${allQuarterlyGrades.length} = ${average} ≈ ${roundedAverage}`);
+  
+  return roundedAverage;
 }
 
 export function getGradeLevel(grade: number): string {

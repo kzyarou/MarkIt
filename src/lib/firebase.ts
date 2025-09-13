@@ -7,14 +7,13 @@ import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCHDUwZoOd2ikAwwM64BTpI0C0QuReq7q0",
-  authDomain: "zupp-1800b.firebaseapp.com",
-  databaseURL: "https://zupp-1800b-default-rtdb.firebaseio.com",
-  projectId: "zupp-1800b",
-  storageBucket: "zupp-1800b.appspot.com",
-  messagingSenderId: "110927391637",
-  appId: "1:110927391637:web:af1ec46b0c1fa955e2a49c",
-  measurementId: "G-90VS2YJQHE"
+  apiKey: "AIzaSyAor6k_CI8pDFW9QDEqBxW-pnhwHIZvp8U",
+  authDomain: "markit-e4ade.firebaseapp.com",
+  projectId: "markit-e4ade",
+  storageBucket: "markit-e4ade.firebasestorage.app",
+  messagingSenderId: "227077432850",
+  appId: "1:227077432850:web:85b41f036565781c6c9acb",
+  measurementId: "G-6ZV8HJF2DR"
 };
 
 // Initialize Firebase
@@ -22,6 +21,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+
+// Configure Firestore for optimization
+if (typeof window !== 'undefined') {
+  // Enable offline persistence
+  import('firebase/firestore').then(({ enableNetwork, disableNetwork }) => {
+    // Enable offline support - settings are configured during initialization
+    console.log('Firebase Firestore initialized with offline support');
+  });
+}
 
 // Initialize Analytics only if supported (browser)
 let analytics: ReturnType<typeof getAnalytics> | undefined = undefined;

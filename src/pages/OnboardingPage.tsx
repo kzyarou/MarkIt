@@ -25,7 +25,7 @@ export default function OnboardingPage() {
   const slides: OnboardingSlide[] = [
     {
       id: "welcome",
-      title: "Welcome to EducHub",
+      title: "Welcome to MarkIt",
       subtitle: "Your Academic Management Companion",
       description: "Transform how you manage grades, track student progress, and maintain academic records with our intuitive platform designed specifically for educators.",
       icon: <Sparkles className="w-16 h-16" />,
@@ -72,7 +72,7 @@ export default function OnboardingPage() {
       id: "success",
       title: "Ready to Begin?",
       subtitle: "Start Your Journey",
-      description: "Join thousands of educators who trust EducHub for their academic management needs. Let's make education more efficient together.",
+      description: "Join thousands of educators who trust MarkIt for their academic management needs. Let's make education more efficient together.",
       icon: <CheckCircle className="w-16 h-16" />,
       color: "from-teal-500 to-green-600",
       gradient: "bg-gradient-to-br from-teal-500 to-green-600"
@@ -171,7 +171,7 @@ export default function OnboardingPage() {
             <div className="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center">
               <BookOpen className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="text-xl font-bold text-slate-800">EducHub</span>
+            <span className="text-xl font-bold text-slate-800">MarkIt</span>
           </div>
           <Button
             variant="ghost"

@@ -1,17 +1,17 @@
 import React from 'react';
 import { useTheme } from 'next-themes';
 
-interface EducHubHeaderProps {
+interface MarkItHeaderProps {
   subtitle?: string;
   className?: string;
 }
 
-const EducHubHeader: React.FC<EducHubHeaderProps> = ({ subtitle, className = '' }) => {
+const MarkItHeader: React.FC<MarkItHeaderProps> = ({ subtitle, className = '' }) => {
   const { theme } = useTheme();
-  const hubColor = theme === 'dark' ? '#52677D' : '#2563eb';
+  const markItColor = theme === 'dark' ? '#16a34a' : '#15803d'; // Green colors for MarkIt
   return (
     <div className={`pt-6 pb-2 ${className}`}>
-      <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-center" style={{ color: hubColor }}>EducHub</h1>
+      <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-center" style={{ color: markItColor }}>MarkIt</h1>
       {subtitle && (
         <div className="text-lg font-medium text-center text-gray-500 dark:text-gray-300 mt-1">{subtitle}</div>
       )}
@@ -19,4 +19,6 @@ const EducHubHeader: React.FC<EducHubHeaderProps> = ({ subtitle, className = '' 
   );
 };
 
-export default EducHubHeader; 
+export default MarkItHeader;
+
+

@@ -14,6 +14,8 @@ import { calculateQuarterGrade, getGradeColor, getGradeLevel } from '@/utils/gra
 import { useToast } from '@/hooks/use-toast';
 import { saveSection } from '@/services/gradesService';
 import { GradesService } from '@/services/gradesService';
+import { Progress } from '@/components/ui/progress';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 interface StudentSubjectGradingModalProps {
   isOpen: boolean;
@@ -337,30 +339,42 @@ export function StudentSubjectGradingModal({
     const categoryAssessments = assessments.filter(a => a.category === category && a.quarter === getCurrentQuarter());
     // Get the student's scores for this category/quarter
     const studentScores = gradeData[getCurrentQuarter()][category];
+    
+    // Calculate progress for this category
+    const totalEarned = studentScores.reduce((sum: number, s: any) => sum + (Number(s.score) || 0), 0);
+    const totalPoints = studentScores.reduce((sum: number, s: any) => sum + (Number(s.totalPoints) || 0), 0);
+    const progress = totalPoints > 0 ? Math.min(100, Math.round((totalEarned / totalPoints) * 100)) : 0;
+    
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            {title}
+      <AccordionItem key={category} value={category}>
+        <AccordionTrigger>
+          <div className="flex items-center justify-between w-full pr-4">
+            <div className="font-medium">{title}</div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{studentScores.length} items</Badge>
+              <Badge variant="secondary">{progress}%</Badge>
+            </div>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="mb-3">
+            <Progress value={progress} className="h-2" />
+          </div>
+          <div className="flex justify-end mb-2">
             <Button size="sm" onClick={() => addAssessment(category, getCurrentQuarter())}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Assessment
+              <Plus className="w-4 h-4 mr-1" /> Add {title.split(' ')[0]} {title.split(' ')[1]}
             </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+          </div>
           {categoryAssessments.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">
-              No assessments yet. Click "Add Assessment" to get started.
-            </p>
+            <p className="text-gray-500 text-center py-4">No assessments yet. Click Add to get started.</p>
           ) : (
             categoryAssessments.map((assessment, idx) => {
               // Find the student's score entry for this assessment
               const scoreEntry = studentScores.find(s => s.id === assessment.id);
               return (
-                <div key={assessment.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end p-3 border rounded">
+                <div key={assessment.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end p-3 border rounded mb-2">
                   <div>
-                    <Label>Assessment Name</Label>
+                    <Label>Name</Label>
                     <Input
                       value={assessment.name}
                       onChange={e => updateAssessment(assessment.id, 'name', e.target.value)}
@@ -421,8 +435,8 @@ export function StudentSubjectGradingModal({
               );
             })
           )}
-        </CardContent>
-      </Card>
+        </AccordionContent>
+      </AccordionItem>
     );
   };
 
@@ -485,43 +499,56 @@ export function StudentSubjectGradingModal({
             </TabsList>
 
             <TabsContent value={currentPeriod} className="space-y-6">
-              {/* Grade Categories */}
-              <div className="space-y-4">
-                {renderAssessmentCategory('writtenWork', `Written Work (${subject.writtenWorkWeight}%)`)}
-                {renderAssessmentCategory('performanceTask', `Performance Tasks (${subject.performanceTaskWeight}%)`)}
-                {renderAssessmentCategory('quarterlyExam', `Quarterly Exam (${subject.quarterlyExamWeight}%)`)}
-              </div>
+              {/* Grade Categories with Accordion */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Grade Entry</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 rounded-md border mb-4">
+                    <div className="text-sm text-muted-foreground mb-2">Current Period: {isSenior ? seniorTabs.find(tab => tab.key === currentPeriod)?.label : `Quarter ${currentQuarter.slice(-1)}`}</div>
+                  </div>
+                  <Accordion type="single" collapsible className="w-full mb-4">
+                    {renderAssessmentCategory('writtenWork', `Written Work (${subject.writtenWorkWeight}%)`)}
+                    {renderAssessmentCategory('performanceTask', `Performance Tasks (${subject.performanceTaskWeight}%)`)}
+                    {renderAssessmentCategory('quarterlyExam', `Quarterly Exam (${subject.quarterlyExamWeight}%)`)}
+                  </Accordion>
+                </CardContent>
+              </Card>
 
               {/* Period Summary */}
               <Card className="bg-card">
                 <CardHeader>
-                  <CardTitle>
-                    {isSenior
-                      ? `${seniorTabs.find(tab => tab.key === currentPeriod)?.label} Summary`
-                      : `Quarter ${currentQuarter.slice(-1)} Summary`}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>
+                      {isSenior
+                        ? `${seniorTabs.find(tab => tab.key === currentPeriod)?.label} Summary`
+                        : `Quarter ${currentQuarter.slice(-1)} Summary`}
+                    </CardTitle>
+                    <Badge variant="outline">{isSenior ? seniorTabs.find(tab => tab.key === currentPeriod)?.label : `Quarter ${currentQuarter.slice(-1)}`}</Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div className="text-center">
+                    <div className="text-center p-3 rounded border">
                       <p className="text-sm text-gray-600">Written Work</p>
                       <p className="text-2xl font-bold">
                         {quarterResult.writtenWorkPercentage.toFixed(1)}%
                       </p>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center p-3 rounded border">
                       <p className="text-sm text-gray-600">Performance Tasks</p>
                       <p className="text-2xl font-bold">
                         {quarterResult.performanceTaskPercentage.toFixed(1)}%
                       </p>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center p-3 rounded border">
                       <p className="text-sm text-gray-600">Quarterly Exam</p>
                       <p className="text-2xl font-bold">
                         {quarterResult.quarterlyExamPercentage.toFixed(1)}%
                       </p>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center p-3 rounded border">
                       <p className="text-sm text-gray-600">Initial Grade</p>
                       <p className="text-2xl font-bold">
                         {quarterResult.initialGrade.toFixed(2)}
@@ -533,9 +560,9 @@ export function StudentSubjectGradingModal({
                     <p className={`text-4xl font-bold ${getGradeColor(quarterResult.transmutedGrade)}`}>
                       {quarterResult.transmutedGrade}
                     </p>
-                    <Badge variant="secondary" className="mt-2">
-                      {getGradeLevel(quarterResult.transmutedGrade)}
-                    </Badge>
+                    <div className="mt-2">
+                      <span className="inline-block px-3 py-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold">{getGradeLevel(quarterResult.transmutedGrade)}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

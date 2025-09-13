@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Student, Section, SubjectFinalGrade } from '@/types/grading';
-import { calculateQuarterGrade, calculateFinalGrade, getGradeLevel } from '@/utils/gradeCalculations';
+import { calculateQuarterGrade, calculateFinalGrade, calculateDepEdGeneralAverage } from '@/utils/gradeCalculations';
 
 interface DepEdReportCardProps {
   student: Student;
@@ -41,9 +41,11 @@ export function DepEdReportCard({ student, section }: DepEdReportCardProps) {
   };
 
   const subjectGrades = calculateStudentGrades();
-  const generalAverage = subjectGrades.length > 0 
-    ? Math.round(subjectGrades.reduce((sum, sg) => sum + sg.finalGrade, 0) / subjectGrades.length)
-    : 0;
+  
+  // Fix: Calculate general average according to DepEd standards
+  // General average should be the average of ALL quarterly grades across ALL subjects
+  // NOT the average of final grades per subject
+  const generalAverage = calculateDepEdGeneralAverage(student, section);
 
   return (
     <div className="max-w-4xl mx-auto bg-card">

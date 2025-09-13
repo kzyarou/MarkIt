@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Section, Student, Subject } from '@/types/grading';
 import { getSections, saveSection } from '@/services/gradesService';
 import { loadDraft, saveDraft } from '@/utils/localDrafts';
-import { calculateQuarterGrade, calculateFinalGrade, getGradeColor, calculateGeneralAverage } from '@/utils/gradeCalculations';
+import { calculateQuarterGrade, calculateFinalGrade, getGradeColor, calculateDepEdGeneralAverage } from '@/utils/gradeCalculations';
 import { StudentSubjectGradingModal } from '@/components/StudentSubjectGradingModal';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,8 +57,14 @@ export default function StudentSubjectsPage() {
   }, [sectionId, studentId, user?.id]);
 
   const handleSubjectClick = (subject: Subject) => {
-    setSelectedSubject(subject);
-    setShowGradingModal(true);
+    if (user?.role === 'teacher') {
+      // Navigate to the new grade entry page for teachers
+      navigate(`/section/${sectionId}/student/${studentId}/subject/${subject.id}/grade-entry`);
+    } else {
+      // Keep modal for students (if needed)
+      setSelectedSubject(subject);
+      setShowGradingModal(true);
+    }
   };
 
   const handleGradeSave = async (updatedStudent: Student, hidden = false) => {
@@ -180,21 +186,48 @@ export default function StudentSubjectsPage() {
               const subjectGrades = section.subjects.map(subject => {
                 if (student.gradeData && student.gradeData[subject.id]) {
                   const quarters = student.gradeData[subject.id];
+                  
+                  // Check if any quarter has actual scores (not just empty arrays)
+                  const hasAnyScores = Object.values(quarters).some(quarter => 
+                    quarter && (
+                      (quarter.writtenWork && quarter.writtenWork.some(s => s.score > 0)) ||
+                      (quarter.performanceTask && quarter.performanceTask.some(s => s.score > 0)) ||
+                      (quarter.quarterlyExam && quarter.quarterlyExam.some(s => s.score > 0))
+                    )
+                  );
+                  
+                  if (!hasAnyScores) {
+                    console.log(`Subject ${subject.name} has no actual scores, skipping from average`);
+                    return null; // Return null instead of 0 for subjects with no scores
+                  }
+                  
                   const quarterResults = [
                     quarters.quarter1 ? calculateQuarterGrade(quarters.quarter1, subject) : null,
                     quarters.quarter2 ? calculateQuarterGrade(quarters.quarter2, subject) : null,
                     quarters.quarter3 ? calculateQuarterGrade(quarters.quarter3, subject) : null,
                     quarters.quarter4 ? calculateQuarterGrade(quarters.quarter4, subject) : null,
                   ];
-                  return calculateFinalGrade(quarterResults);
+                  
+                  const finalGrade = calculateFinalGrade(quarterResults);
+                  console.log(`Subject ${subject.name}: final grade = ${finalGrade}`);
+                  return finalGrade;
                 }
-                return 0;
-              }).filter(g => g > 0);
-              const generalAverage = calculateGeneralAverage(subjectGrades);
+                console.log(`Subject ${subject.name} has no grade data`);
+                return null; // Return null instead of 0 for subjects with no grade data
+              }).filter(g => g !== null && g > 0); // Filter out nulls and zeros
+              
+              console.log('Valid subject grades for average:', subjectGrades);
+              const generalAverage = calculateDepEdGeneralAverage(student, section);
+              console.log('General average calculated:', generalAverage);
+              
               return (
                 <div className="flex flex-col items-center justify-center mb-4">
-                  <span className={`text-2xl font-bold ${getGradeColor(generalAverage)}`}>{generalAverage > 0 ? generalAverage : '--'}</span>
-                  <span className="text-xs text-muted-foreground mt-1">General Average</span>
+                  <span className={`text-2xl font-bold ${getGradeColor(generalAverage)}`}>
+                    {generalAverage > 0 ? generalAverage : '--'}
+                  </span>
+                  <span className="text-xs text-muted-foreground mt-1">
+                    General Average {subjectGrades.length > 0 ? `(${subjectGrades.length} subjects)` : '(no grades yet)'}
+                  </span>
                 </div>
               );
             })()

@@ -8,36 +8,44 @@ import { ThemeProvider } from 'next-themes';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { DraftsProvider } from '@/contexts/DraftsContext';
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { MobileHeader } from "@/components/MobileHeader";
 import { useBottomNav } from '@/hooks/use-mobile';
 import { UpdateNotification } from '@/components/UpdateNotification';
+import { UpdateBanner } from '@/components/UpdateBanner';
 import ScrollToTop from "@/components/ScrollToTop";
 import { AppSidebarLayout } from "@/components/AppSidebar";
+// MarkIt - Fisherfolk and Farmer Price Guarantee App
 import Dashboard from "./pages/Dashboard";
-import CreateSection from "./pages/CreateSection";
-import SectionDetailsPage from "./pages/SectionDetailsPage";
-import SectionStudentsPage from "./pages/SectionStudentsPage";
-import StudentSubjectsPage from "./pages/StudentSubjectsPage";
-import ReportsPage from './pages/ReportsPage';
+import MyDashboard from "./pages/MyDashboard";
+import CreateHarvest from "./pages/CreateHarvest";
+import EditHarvest from "./pages/EditHarvest";
+import HarvestDetailsPage from "./pages/HarvestDetailsPage";
+import MyHarvestsPage from "./pages/MyHarvestsPage";
+import BiddingPage from "./pages/BiddingPage";
+import MarketplacePage from './pages/MarketplacePage';
 import SearchPage from './pages/SearchPage';
-import AttendancePage from './pages/AttendancePage';
+import TransactionsPage from './pages/TransactionsPage';
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 import SettingsPage from './pages/SettingsPage';
-import SubjectsECRPage from './pages/SubjectsECRPage';
-import SubjectECRDetailPage from './pages/SubjectECRDetailPage';
+import PriceGuaranteePage from './pages/PriceGuaranteePage';
+import PriceGuaranteeDetailPage from './pages/PriceGuaranteeDetailPage';
 import FAQPage from './pages/FAQPage';
 import DataPrivacyPage from './pages/DataPrivacyPage';
 import TermsPage from './pages/TermsPage';
-import GradeCalculatorPage from './pages/GradeCalculatorPage';
+import PriceCalculatorPage from './pages/PriceCalculatorPage';
+import BidManagementPage from './pages/BidManagementPage';
 import AdminPage from './pages/AdminPage';
+
 import { getSections } from '@/services/gradesService';
 import { loadDraft } from '@/utils/localDrafts';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Capacitor } from '@capacitor/core';
 import { usePresence } from '@/hooks/usePresence';
 import EnforcementGate from '@/components/EnforcementGate';
+import { RoleProtectedRoute } from '@/components/RoleProtectedRoute';
 
 const queryClient = new QueryClient();
 
@@ -77,6 +85,7 @@ function AppRoutes() {
 
   const isAuthedArea = Boolean(user) && !['/auth', '/onboarding'].includes(location.pathname);
   const showBottomNav = isAuthedArea && isMobile;
+  const showMobileHeader = isAuthedArea && isMobile;
 
   const routes = (
     <Routes>
@@ -86,55 +95,104 @@ function AppRoutes() {
       } />
       <Route path="/" element={
         <ProtectedRoute>
-          <Dashboard />
+          {user?.role === 'admin' ? (
+            <Navigate to="/admin" replace />
+          ) : (
+            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+              <Dashboard />
+            </RoleProtectedRoute>
+          )}
         </ProtectedRoute>
       } />
-      <Route path="/create-section" element={
+      <Route path="/mydashboard" element={
         <ProtectedRoute>
-          <CreateSection />
+          {user?.role === 'admin' ? (
+            <Navigate to="/admin" replace />
+          ) : (
+            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+              <MyDashboard />
+            </RoleProtectedRoute>
+          )}
         </ProtectedRoute>
       } />
-      <Route path="/section/:sectionId" element={
+      <Route path="/create-harvest" element={
         <ProtectedRoute>
-          <SectionDetailsPage />
+          {user?.role === 'admin' ? (
+            <Navigate to="/admin" replace />
+          ) : (
+            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman']}>
+              <CreateHarvest />
+            </RoleProtectedRoute>
+          )}
         </ProtectedRoute>
       } />
-      <Route path="/section/:sectionId/students" element={
+      <Route path="/harvest/:harvestId" element={
+        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+          <HarvestDetailsPage />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/harvest/:harvestId/edit" element={
+        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman']}>
+          <EditHarvest />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/my-harvests" element={
+        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman']}>
+          <MyHarvestsPage />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/marketplace" element={
+        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+          <MarketplacePage />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/bidding/:harvestId" element={
+        <RoleProtectedRoute allowedRoles={['buyer']}>
+          <BiddingPage />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/my-bids" element={
+        <RoleProtectedRoute allowedRoles={['buyer']}>
+          <BidManagementPage />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/transactions" element={
         <ProtectedRoute>
-          <SectionStudentsPage />
+          {user?.role === 'admin' ? (
+            <Navigate to="/admin" replace />
+          ) : (
+            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+              <TransactionsPage />
+            </RoleProtectedRoute>
+          )}
         </ProtectedRoute>
       } />
-      <Route path="/section/:sectionId/student/:studentId" element={
-        <ProtectedRoute>
-          <StudentSubjectsPage />
-        </ProtectedRoute>
+      <Route path="/price-guarantee" element={
+        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+          <PriceGuaranteePage />
+        </RoleProtectedRoute>
       } />
-      <Route path="/reports" element={
-        <ProtectedRoute>
-          <ReportsPage />
-        </ProtectedRoute>
+      <Route path="/price-guarantee/:category/:subcategory" element={
+        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+          <PriceGuaranteeDetailPage />
+        </RoleProtectedRoute>
       } />
       <Route path="/admin" element={
         <ProtectedRoute>
           {user?.role === 'admin' ? <AdminPage /> : <Navigate to="/" replace />}
         </ProtectedRoute>
       } />
-      {/* Add calculator route for students only */}
-      {user?.role === 'student' && (
-        <Route path="/calculator" element={
+      {/* Add price calculator route for farmers/fishermen */}
+      {(user?.role === 'farmer' || user?.role === 'fisherman') && (
+        <Route path="/price-calculator" element={
           <ProtectedRoute>
-            <GradeCalculatorPage />
+            <PriceCalculatorPage />
           </ProtectedRoute>
         } />
       )}
       <Route path="/search" element={
         <ProtectedRoute>
           <SearchPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/attendance" element={
-        <ProtectedRoute>
-          <AttendancePage />
         </ProtectedRoute>
       } />
       <Route path="/profile" element={
@@ -155,16 +213,6 @@ function AppRoutes() {
       <Route path="/faq" element={<FAQPage />} />
       <Route path="/privacy" element={<DataPrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
-      <Route path="/section/:sectionId/subjects-ecr" element={
-        <ProtectedRoute>
-          <SubjectsECRPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/section/:sectionId/subjects-ecr/:subjectId" element={
-        <ProtectedRoute>
-          <SubjectECRDetailPage />
-        </ProtectedRoute>
-      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -179,7 +227,10 @@ function AppRoutes() {
 
   return (
     <div className="relative">
-      {routes}
+      {showMobileHeader && <MobileHeader />}
+      <div className={showMobileHeader ? "pt-16" : ""}>
+        {routes}
+      </div>
       {Boolean(user) && <EnforcementGate />}
       {showBottomNav && <BottomNavigation />}
     </div>
@@ -195,8 +246,9 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <ScrollToTop />
+            {process.env.NODE_ENV !== 'development' && <UpdateBanner />}
             <AppRoutes />
-            <UpdateNotification />
+            {process.env.NODE_ENV !== 'development' && <UpdateNotification />}
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

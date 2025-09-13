@@ -61,6 +61,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				cream: {
+					50: 'hsl(var(--cream-50))',
+					100: 'hsl(var(--cream-100))',
+					200: 'hsl(var(--cream-200))',
+					300: 'hsl(var(--cream-300))',
+					400: 'hsl(var(--cream-400))',
+					500: 'hsl(var(--cream-500))',
+					600: 'hsl(var(--cream-600))',
+					700: 'hsl(var(--cream-700))',
+					800: 'hsl(var(--cream-800))',
+					900: 'hsl(var(--cream-900))'
 				}
 			},
 			borderRadius: {

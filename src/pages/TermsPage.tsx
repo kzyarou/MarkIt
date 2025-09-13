@@ -18,9 +18,9 @@ export default function TermsPage() {
           <h1 className="text-2xl font-extrabold tracking-tight">Terms and Conditions</h1>
         </div>
         <div className="space-y-6 text-base max-w-2xl mx-auto">
-          <p>Welcome to <b>EducHub</b>. By using this app, you agree to the following terms and conditions. Please read them carefully.</p>
+          <p>Welcome to <b>MarkIt</b>. By using this app, you agree to the following terms and conditions. Please read them carefully.</p>
           <h2 className="text-lg font-bold mt-4">1. Acceptance of Terms</h2>
-          <p>By accessing or using EducHub, you agree to be bound by these terms. If you do not agree, please do not use the app.</p>
+          <p>By accessing or using MarkIt, you agree to be bound by these terms. If you do not agree, please do not use the app.</p>
           <h2 className="text-lg font-bold mt-4">2. Use of the App</h2>
           <ul className="list-disc ml-6">
             <li>You must use the app in compliance with all applicable laws and DepEd regulations.</li>
@@ -29,12 +29,12 @@ export default function TermsPage() {
           </ul>
           <h2 className="text-lg font-bold mt-4">3. Intellectual Property</h2>
           <ul className="list-disc ml-6">
-            <li>All content, trademarks, and code in EducHub are the property of their respective owners.</li>
+            <li>All content, trademarks, and code in MarkIt are the property of their respective owners.</li>
             <li>You may not copy, modify, or distribute any part of the app without permission.</li>
           </ul>
           <h2 className="text-lg font-bold mt-4">4. Limitation of Liability</h2>
           <ul className="list-disc ml-6">
-            <li>EducHub is provided "as is" without warranties of any kind.</li>
+            <li>MarkIt is provided "as is" without warranties of any kind.</li>
             <li>We are not liable for any damages or losses resulting from your use of the app.</li>
             <li>We do not guarantee the accuracy or completeness of academic calculations; always verify with official DepEd sources.</li>
           </ul>
