@@ -1,230 +1,192 @@
-# EducHub: Philippine K-12 Academic Management Platform
+# MarkIt: Fisherfolk and Farmer Price Guarantee App
 
-## Overview
+A comprehensive marketplace platform that connects farmers and fisherfolk directly with buyers, ensuring fair prices and eliminating middleman exploitation.
 
-**EducHub** is a modern, all-in-one platform for managing student grades, attendance, and academic records, designed specifically for the Philippine K-12 education system. It empowers teachers and students to efficiently handle grades, attendance, and academic progress, while ensuring compliance with the Department of Education (DepEd) standards and legal requirements.
+## 🌾 Overview
 
----
+MarkIt is an international platform designed to revolutionize agricultural trading by providing a direct connection between producers (farmers and fisherfolk) and buyers (restaurants, cooperatives, schools). The app features a unique price guarantee system that ensures fair compensation for agricultural producers.
 
-## Table of Contents
-- [Key Features](#key-features)
-- [DepEd and Legal Basis](#deped-and-legal-basis)
-- [Grading and Calculation Formulas](#grading-and-calculation-formulas)
-- [Technical Stack](#technical-stack)
-- [Data Structures](#data-structures)
-- [How to Use](#how-to-use)
-- [Deployment](#deployment)
-- [Other Technicalities](#other-technicalities)
+## ✨ Key Features
 
----
+### For Farmers & Fisherfolk
+- **Harvest Posting**: Create detailed listings for your agricultural products
+- **Quality Documentation**: Specify grade, freshness, certifications, and organic status
+- **Price Guarantee**: Set minimum prices with bidding system for fair compensation
+- **Direct Communication**: Connect directly with buyers without middlemen
+- **Location Services**: Specify pickup and delivery options
 
-## Key Features
+### For Buyers
+- **Browse Harvests**: Discover fresh products from local farmers and fisherfolk
+- **Bidding System**: Place competitive bids on available harvests
+- **Quality Assurance**: Access detailed quality information and certifications
+- **Fair Pricing**: Transparent pricing without hidden markups
+- **Direct Sourcing**: Build relationships with producers
 
-### For Teachers
-- **Section and Subject Management**: Create, edit, and manage sections and subjects. Assign custom weights for Written Work (WW), Performance Tasks (PT), and Quarterly Exams (QE) (weights must total 100%).
-- **Student Management**: Add, edit, and connect students to sections. Each student can be linked via LRN (Learner Reference Number).
-- **Grade Calculation**: Input scores for WW, PT, and QE per quarter. Grades are automatically calculated and transmuted using DepEd's official transmutation table.
-- **Attendance Tracking**: Record daily attendance (present, absent, late) for each student. Save drafts and upload attendance records.
-- **Reports and Class Records**: Generate DepEd-compliant class records and individual report cards. Print or export reports for official use.
-- **Drafts and Offline Support**: Save drafts of sections and attendance for later upload.
+### General Features
+- **User Roles**: Farmers, Fishermen, Buyers, and Admin roles
+- **Real-time Bidding**: Live bidding system with notifications
+- **Price Calculator**: Tools for fair price determination
+- **Mobile Responsive**: Optimized for mobile and desktop use
+- **International Support**: Multi-country phone number formatting
 
-### For Students
-- **Personal Dashboard**: View overall grades, subject grades, and attendance statistics.
-- **Report Card Access**: Securely view and print official DepEd report cards.
-- **Academic Records**: Access comprehensive academic history, including grades and attendance.
+## 🚀 Technology Stack
 
-### General
-- **Onboarding Carousel**: Guided introduction to platform features.
-- **Role-based Access**: Separate flows for teachers and students.
-- **Mobile-Ready**: Responsive design for use on any device.
-- **Secure Authentication**: Powered by Firebase Auth.
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Framework**: Tailwind CSS, Radix UI
+- **Backend**: Firebase (Authentication, Firestore, Storage)
+- **State Management**: React Context API
+- **Routing**: React Router DOM
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **PWA**: Service Worker, Offline Support
 
----
+## 📱 User Interface
 
-## DepEd and Legal Basis
+- **Rich Green Theme**: Agricultural-inspired color scheme
+- **Instagram-style Navigation**: Modern sidebar with user profile
+- **Mobile-first Design**: Responsive across all devices
+- **Intuitive Forms**: Streamlined harvest posting and bidding
+- **Real-time Updates**: Live notifications and status updates
 
-EducHub strictly follows the official guidelines and formulas set by the Philippine Department of Education:
-
-- **DepEd Order No. 8, s. 2015**: "Policy Guidelines on Classroom Assessment for the K to 12 Basic Education Program" ([Official PDF](https://www.deped.gov.ph/wp-content/uploads/2015/04/DO_s2015_08.pdf))
-  - **Grading Components**: Written Work, Performance Tasks, Quarterly Assessment
-  - **Weight Distribution**: Default is 40% WW, 40% PT, 20% QE (customizable per subject)
-  - **Transmutation Table**: Used to convert initial grades to quarterly grades
-  - **Grading Scale**:
-    - 90-100: Outstanding
-    - 85-89: Very Satisfactory
-    - 80-84: Satisfactory
-    - 75-79: Fairly Satisfactory
-    - Below 75: Did Not Meet Expectations
-- **LRN (Learner Reference Number)**: Used for unique student identification (DepEd Order No. 22, s. 2012)
-
-All calculations, records, and reports are designed to be compliant with these DepEd policies.
-
----
-
-## Grading and Calculation Formulas
-
-### 1. **Category Percentage**
-For each category (WW, PT, QE):
+## 🏗️ Project Structure
 
 ```
-Category Percentage = (Sum of Scores / Sum of Total Points) × 100
+src/
+├── components/          # Reusable UI components
+├── contexts/           # React Context providers
+├── hooks/              # Custom React hooks
+├── lib/                # Utility libraries and Firebase config
+├── pages/              # Application pages
+├── services/           # API and service layer
+├── types/              # TypeScript type definitions
+└── utils/              # Helper functions
 ```
 
-### 2. **Initial Grade**
+## 🚀 Getting Started
 
-```
-Initial Grade = (WW% × WW Weight) + (PT% × PT Weight) + (QE% × QE Weight)
-```
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Firebase project setup
 
-### 3. **Transmutation (DepEd Table)**
-The initial grade is converted to the quarterly grade using the official DepEd transmutation table (see [DepEd Order 8, s. 2015](https://www.deped.gov.ph/wp-content/uploads/2015/04/DO_s2015_08.pdf)). Example:
+### Installation
 
-| Initial Grade Range | Transmuted Grade |
-|--------------------|------------------|
-| 98.40 - 100.00     | 100              |
-| 95.20 - 98.39      | 99               |
-| ...                | ...              |
-| 0.00 - 2.39        | 75               |
-
-### 4. **Quarterly and Final Grades**
-- **Quarterly Grade**: Transmuted grade for each quarter
-- **Final Grade**: Average of all available quarterly grades (rounded)
-- **General Average**: Average of all final grades across subjects (rounded)
-
-### 5. **Grading Scale**
-- 90-100: Outstanding
-- 85-89: Very Satisfactory
-- 80-84: Satisfactory
-- 75-79: Fairly Satisfactory
-- Below 75: Did Not Meet Expectations
-
----
-
-## Technical Stack
-- **Frontend**: React, TypeScript, Vite
-- **UI**: shadcn-ui, Tailwind CSS
-- **State Management**: React Context, React Query
-- **Authentication & Database**: Firebase (Firestore, Auth, Storage)
-- **Mobile Support**: Capacitor (Android/iOS wrappers)
-- **Other**: Framer Motion, Lucide Icons, Lottie Animations
-
----
-
-## Data Structures
-
-### Student
-```ts
-interface Student {
-  id: string;
-  name: string;
-  lrn?: string;
-  gradeData: StudentGradeData;
-  connectedUserId?: string;
-  connectedUserLRN?: string;
-  connectedUserEmail?: string;
-}
-```
-
-### Section
-```ts
-interface Section {
-  id: string;
-  name: string;
-  gradeLevel: string;
-  students: Student[];
-  subjects: Subject[];
-  createdBy: string;
-  createdAt: string;
-}
-```
-
-### Subject
-```ts
-interface Subject {
-  id: string;
-  name: string;
-  writtenWorkWeight: number;
-  performanceTaskWeight: number;
-  quarterlyExamWeight: number;
-  assessments?: Assessment[];
-}
-```
-
-### Assessment
-```ts
-interface Assessment {
-  id: string;
-  name: string;
-  category: 'writtenWork' | 'performanceTask' | 'quarterlyExam';
-  quarter: 'quarter1' | 'quarter2' | 'quarter3' | 'quarter4';
-  totalPoints: number;
-}
-```
-
----
-
-## How to Use
-
-### Local Development
 1. **Clone the repository**
-```sh
-git clone <YOUR_GIT_URL>
-cd <YOUR_PROJECT_NAME>
+   ```bash
+   git clone https://github.com/kzyarou/MarkIt.git
+   cd MarkIt
    ```
+
 2. **Install dependencies**
-   ```sh
+   ```bash
    npm install
    ```
-3. **Start the development server**
-   ```sh
-npm run dev
+
+3. **Configure Firebase**
+   - Create a Firebase project
+   - Enable Authentication and Firestore
+   - Update `src/lib/firebase.ts` with your config
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## 🔧 Configuration
+
+### Firebase Setup
+1. Create a new Firebase project
+2. Enable Authentication (Email/Password, Google)
+3. Create Firestore database
+4. Update the configuration in `src/lib/firebase.ts`
+
+### Environment Variables
+Create a `.env.local` file:
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
 ```
 
-### Editing Subjects and Weights
-- When adding/editing a subject, you must set the weights for WW, PT, and QE. The total must be exactly 100% (validated by the app).
+## 📊 Data Models
 
-### Attendance
-- Teachers can record daily attendance for each section and save drafts for later upload.
+### User
+- Profile information, role, location, business details
+- Verification status and rating system
 
-### Reports
-- Generate and print DepEd-compliant class records and report cards from the Reports page.
+### Harvest
+- Product details, quantity, quality specifications
+- Pricing, bidding, and location information
 
-### Authentication
-- Secure login/signup for both teachers and students. Students use LRN; teachers use Employee ID.
+### Bid
+- Bidder information, amount, timestamp
+- Status and acceptance tracking
+
+### Transaction
+- Payment processing, delivery coordination
+- Completion and review tracking
+
+## 🌍 International Features
+
+- **Multi-language Support**: Ready for internationalization
+- **Phone Number Formatting**: International phone number validation
+- **Currency Support**: Multi-currency price display
+- **Regional Settings**: Location-based features
+
+## 🔒 Security Features
+
+- **Role-based Access Control**: Secure user permissions
+- **Data Validation**: Client and server-side validation
+- **Secure Authentication**: Firebase Auth integration
+- **Privacy Protection**: User data encryption
+
+## 📱 PWA Features
+
+- **Offline Support**: Works without internet connection
+- **Installable**: Add to home screen
+- **Push Notifications**: Real-time updates
+- **Background Sync**: Data synchronization
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Firebase for backend services
+- React community for excellent libraries
+- Agricultural communities for inspiration
+- Open source contributors
+
+## 📞 Support
+
+For support and questions:
+- Create an issue on GitHub
+- Contact: [your-email@example.com]
+- Documentation: [Link to docs]
+
+## 🔮 Future Roadmap
+
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics dashboard
+- [ ] Payment gateway integration
+- [ ] Multi-language support
+- [ ] AI-powered price recommendations
+- [ ] Blockchain integration for transparency
 
 ---
 
-## Deployment
-- **Web**: Deploy via Vite or your preferred static hosting.
-- **Mobile**: Build Android/iOS apps using Capacitor wrappers.
-- **Firebase**: Configure your own Firebase project for Auth, Firestore, and Storage.
-
----
-
-## Other Technicalities
-- **Role-based Routing**: Teachers and students see different dashboards and features.
-- **Drafts**: All major data (sections, attendance) can be saved as drafts for offline/temporary work.
-- **Customizable Subjects**: Teachers can add, edit, and remove subjects, including custom quick-add lists.
-- **Data Validation**: All weights and required fields are validated in-app.
-- **Accessibility**: Designed for usability on both desktop and mobile devices.
-- **Security**: All data is protected via Firebase Auth and Firestore security rules.
-
----
-
-## Legal and Policy References
-- [DepEd Order No. 8, s. 2015](https://www.deped.gov.ph/wp-content/uploads/2015/04/DO_s2015_08.pdf) — Policy Guidelines on Classroom Assessment for the K to 12 Basic Education Program
-- [DepEd Order No. 22, s. 2012](https://www.deped.gov.ph/2012/03/20/do-22-s-2012/) — Adoption of the Unique Learner Reference Number (LRN)
-
----
-
-## Credits
-- Built with ❤️ for Philippine educators and learners.
-- Powered by open-source technologies and the official DepEd guidelines.
-
-## Subject Track and Type (DepEd Compliance)
-
-- Each subject now includes:
-  - **track**: For Senior High School (Grades 11-12), choose from 'Core', 'Academic', 'TVL', or 'Sports/Arts'.
-  - **type**: For Junior High School/Elementary, choose from 'Languages', 'AP', 'EsP', 'Science', 'Math', 'MAPEH', or 'EPP/TLE'.
-- These fields are used to automatically select the correct DepEd grading formula and weights for each subject, based on the latest DepEd Orders (including 2025 for SHS).
-- The subject's track/type is displayed in the app UI (subject cards, report cards, etc.) for full transparency.
+**MarkIt** - Empowering farmers and fisherfolk with fair prices and direct market access. 🌾🐟
