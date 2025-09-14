@@ -218,7 +218,7 @@ const SubjectECRDetailPage = () => {
   return (
     <div className={`min-h-screen pb-24 px-2 ${isDark ? 'bg-[#181c24]' : 'bg-background'}`}>
       <div className="pt-6 pb-2">
-        <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-6 ${isDark ? 'text-white' : 'text-foreground'}`}>EducHub</h1>
+        <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-6 ${isDark ? 'text-white' : 'text-foreground'}`}>MarkIt</h1>
       </div>
       <div className={`max-w-4xl mx-auto mt-8 rounded-lg shadow-lg p-6 ${isDark ? 'bg-[#232a36]' : 'bg-card'}`}>
         <div className="flex items-center mb-6">

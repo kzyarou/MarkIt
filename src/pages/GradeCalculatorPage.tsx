@@ -11,7 +11,9 @@ const GradeCalculatorPage: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col ${bottomNavClass} ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'}`}>
       <MarkItHeader subtitle="Calculator" />
-      <GradeCalculator />
+      <div className="flex-1 pb-mobile-content">
+        <GradeCalculator />
+      </div>
     </div>
   );
 };

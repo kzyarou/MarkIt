@@ -162,6 +162,17 @@ All colors MUST be HSL.
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px);
   }
   
+  /* Mobile content padding - for pages that need extra bottom spacing */
+  .pb-mobile-content {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
+  }
+  
+  /* Mobile page container - standard mobile layout */
+  .mobile-page {
+    min-height: 100vh;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
+  }
+  
   /* Ensure bottom navigation stays in place */
   .bottom-nav-fixed {
     position: fixed;
@@ -171,5 +182,83 @@ All colors MUST be HSL.
     z-index: 50;
     transform: translateZ(0);
     will-change: transform;
+  }
+
+  /* Mobile touch improvements */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Mobile-friendly text sizes */
+  .mobile-text-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .mobile-text-base {
+    @apply text-base sm:text-lg;
+  }
+
+  .mobile-text-lg {
+    @apply text-lg sm:text-xl;
+  }
+
+  .mobile-text-xl {
+    @apply text-xl sm:text-2xl;
+  }
+
+  /* Mobile spacing */
+  .mobile-spacing {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .mobile-padding {
+    @apply p-4 sm:p-6;
+  }
+
+  /* Mobile grid improvements */
+  .mobile-grid-2 {
+    @apply grid grid-cols-2 gap-3 sm:gap-4;
+  }
+
+  .mobile-grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4;
+  }
+
+  /* Performance optimizations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile viewport optimizations */
+  .mobile-viewport {
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  }
+
+  /* Reduce motion for accessibility and performance */
+  @media (prefers-reduced-motion: reduce) {
+    .smooth-scroll {
+      scroll-behavior: auto;
+    }
+  }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    /* Optimize rendering performance on mobile */
+    .mobile-optimized {
+      contain: layout style paint;
+    }
+    
+    /* Improve touch responsiveness */
+    .touch-optimized {
+      touch-action: manipulation;
+    }
   }
 }

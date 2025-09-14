@@ -143,7 +143,7 @@ export default function ProfilePage({ viewOnly }: ProfilePageProps) {
   if (viewOnly) {
     const isViewingAdmin = viewUser?.email === 'zacharythanos@gmail.com' || viewUser?.role === 'admin'
     return (
-      <div className={`min-h-screen flex flex-col items-center pb-20 transition-colors duration-300 ${isDark ? 'bg-[#0F1A2B] text-white' : (isViewingAdmin ? 'bg-gradient-to-b from-red-50 to-white text-gray-900' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900')}`}>
+      <div className={`min-h-screen flex flex-col items-center pb-mobile-content transition-colors duration-300 ${isDark ? 'bg-[#0F1A2B] text-white' : (isViewingAdmin ? 'bg-gradient-to-b from-red-50 to-white text-gray-900' : 'bg-gradient-to-b from-blue-50 to-white text-gray-900')}`}>
         <MarkItHeader subtitle="Profile" className="w-full" />
         <ProfileView
           profile={viewUser}

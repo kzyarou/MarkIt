@@ -3,19 +3,92 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, User, MapPin, Briefcase, CheckCircle } from "lucide-react";
 
-// Remove the old steps object and branching logic
-// const steps = {
-//   name: 0,
-//   role: 1,
-//   studentDetails: 2,
-//   studentEmail: 3,
-//   studentPassword: 4,
-//   teacherEmpId: 2,
-//   teacherAge: 3,
-//   teacherEmail: 4,
-//   teacherPassword: 5,
-// };
+const steps = [
+  { id: 1, title: "Personal Information", icon: User },
+  { id: 2, title: "Location", icon: MapPin },
+  { id: 3, title: "Account Type", icon: Briefcase },
+  { id: 4, title: "Verification", icon: CheckCircle }
+];
+
+// Comprehensive Philippine regions and provinces data
+const philippineRegions = {
+  "NCR": {
+    name: "National Capital Region",
+    provinces: ["Metro Manila"]
+  },
+  "CAR": {
+    name: "Cordillera Administrative Region",
+    provinces: ["Abra", "Apayao", "Benguet", "Ifugao", "Kalinga", "Mountain Province"]
+  },
+  "Region I": {
+    name: "Ilocos Region",
+    provinces: ["Ilocos Norte", "Ilocos Sur", "La Union", "Pangasinan"]
+  },
+  "Region II": {
+    name: "Cagayan Valley",
+    provinces: ["Batanes", "Cagayan", "Isabela", "Nueva Vizcaya", "Quirino"]
+  },
+  "Region III": {
+    name: "Central Luzon",
+    provinces: ["Aurora", "Bataan", "Bulacan", "Nueva Ecija", "Pampanga", "Tarlac", "Zambales"]
+  },
+  "Region IV-A": {
+    name: "CALABARZON",
+    provinces: ["Batangas", "Cavite", "Laguna", "Quezon", "Rizal"]
+  },
+  "Region IV-B": {
+    name: "MIMAROPA",
+    provinces: ["Marinduque", "Occidental Mindoro", "Oriental Mindoro", "Palawan", "Romblon"]
+  },
+  "Region V": {
+    name: "Bicol Region",
+    provinces: ["Albay", "Camarines Norte", "Camarines Sur", "Catanduanes", "Masbate", "Sorsogon"]
+  },
+  "Region VI": {
+    name: "Western Visayas",
+    provinces: ["Aklan", "Antique", "Capiz", "Guimaras", "Iloilo", "Negros Occidental"]
+  },
+  "Region VII": {
+    name: "Central Visayas",
+    provinces: ["Bohol", "Cebu", "Negros Oriental", "Siquijor"]
+  },
+  "Region VIII": {
+    name: "Eastern Visayas",
+    provinces: ["Biliran", "Eastern Samar", "Leyte", "Northern Samar", "Samar", "Southern Leyte"]
+  },
+  "Region IX": {
+    name: "Zamboanga Peninsula",
+    provinces: ["Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay"]
+  },
+  "Region X": {
+    name: "Northern Mindanao",
+    provinces: ["Bukidnon", "Camiguin", "Lanao del Norte", "Misamis Occidental", "Misamis Oriental"]
+  },
+  "Region XI": {
+    name: "Davao Region",
+    provinces: ["Davao de Oro", "Davao del Norte", "Davao del Sur", "Davao Occidental", "Davao Oriental"]
+  },
+  "Region XII": {
+    name: "SOCCSKSARGEN",
+    provinces: ["Cotabato", "Sarangani", "South Cotabato", "Sultan Kudarat"]
+  },
+  "Region XIII": {
+    name: "Caraga",
+    provinces: ["Agusan del Norte", "Agusan del Sur", "Dinagat Islands", "Surigao del Norte", "Surigao del Sur"]
+  },
+  "BARMM": {
+    name: "Bangsamoro Autonomous Region in Muslim Mindanao",
+    provinces: ["Basilan", "Lanao del Sur", "Maguindanao", "Sulu", "Tawi-Tawi"]
+  }
+};
 
 export default function AuthPage() {
   const { login, signup } = useAuth();
@@ -29,18 +102,30 @@ export default function AuthPage() {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
 
   // Onboarding state
-  const [signupStep, setSignupStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(1);
   const [signupData, setSignupData] = useState({
-    name: '',
-    role: '',
-    lrn: '',
-    empId: '',
-    age: '',
-    gradeLevel: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    gender: '', // <-- Added gender
+    // Step 1
+    fullName: "",
+    phoneNumber: "",
+    email: "",
+    
+    // Step 2
+    region: "",
+    province: "",
+    municipality: "",
+    barangay: "",
+    
+    // Step 3
+    accountType: "", // seller or consumer
+    operationType: "", // farming, fishing, or both (for sellers only)
+    primaryProducts: "",
+    yearsExperience: "",
+    farmSize: "",
+    description: "",
+    
+    // Step 4
+    password: "",
+    confirmPassword: ""
   });
 
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -56,60 +141,71 @@ export default function AuthPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // New handler functions
+  const handleNext = () => {
+    if (currentStep < 4) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+  
+  const handlePrev = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+  
+  const handleInputChange = (field: string, value: string) => {
+    setSignupData(prev => ({ ...prev, [field]: value }));
+  };
+
   // Validation helpers
-  const isValidName = signupData.name.trim().length > 1;
-  const isValidRole = signupData.role === 'student' || signupData.role === 'teacher';
-  const isValidLrn = /^[0-9]{12}$/.test(signupData.lrn);
-  const isValidEmpId = signupData.empId.trim().length > 0;
-  const isValidAge = Number(signupData.age) > 4 && Number(signupData.age) < 100;
-  const isValidGradeLevel = /^[7-9]$|^10$|^11$|^12$/.test(signupData.gradeLevel);
+  const isValidFullName = signupData.fullName.trim().length > 1;
+  const isValidPhone = /^(\+63|0)9\d{9}$/.test(signupData.phoneNumber.replace(/\s/g, ''));
   const isValidEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(signupData.email.trim());
+  const isValidRegion = signupData.region.trim().length > 0;
+  const isValidProvince = signupData.province.trim().length > 0;
+  const isValidMunicipality = signupData.municipality.trim().length > 0;
+  const isValidBarangay = signupData.barangay.trim().length > 0;
+  const isValidAccountType = signupData.accountType.trim().length > 0;
+  const isValidOperationType = signupData.accountType === 'consumer' || signupData.operationType.trim().length > 0;
+  const isValidPrimaryProducts = signupData.accountType === 'consumer' || signupData.primaryProducts.trim().length > 0;
   const isValidPassword = signupData.password.length >= 6;
   const isPasswordMatch = signupData.password === signupData.confirmPassword;
-  const isValidGender = signupData.gender === 'male' || signupData.gender === 'female';
 
-  // Progress calculation for completed/valid steps only
-  const getCompletedSteps = () => {
-    let completed = 0;
-    if (isValidName) completed++;
-    if (isValidRole) completed++;
-    if (isValidGender) completed++;
-    if (signupData.role === 'student') {
-      if (isValidLrn) completed++;
-      if (isValidAge) completed++;
-      if (isValidGradeLevel) completed++;
-      if (isValidEmail) completed++;
-      if (isValidPassword && isPasswordMatch) completed++;
-      return completed;
-    } else if (signupData.role === 'teacher') {
-      if (isValidEmpId) completed++;
-      if (isValidAge) completed++;
-      if (isValidEmail) completed++;
-      if (isValidPassword && isPasswordMatch) completed++;
-      return completed;
-    }
-    return completed;
+  // Get available provinces based on selected region
+  const getAvailableProvinces = () => {
+    if (!signupData.region) return [];
+    return philippineRegions[signupData.region as keyof typeof philippineRegions]?.provinces || [];
   };
-  const totalSteps = signupData.role === 'teacher' ? 7 : 8; // <-- Increased by 1 for gender
-  const progress = Math.min(getCompletedSteps() / totalSteps, 1);
 
-  // Onboarding step renderers
-  const signupSteps = [
+  // Format phone number
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.startsWith('63')) {
+      return `+63 ${cleaned.slice(2, 6)} ${cleaned.slice(6, 10)} ${cleaned.slice(10)}`;
+    } else if (cleaned.startsWith('0')) {
+      return `0${cleaned.slice(1, 5)} ${cleaned.slice(5, 9)} ${cleaned.slice(9)}`;
+    } else if (cleaned.length > 0) {
+      return `0${cleaned.slice(0, 4)} ${cleaned.slice(4, 8)} ${cleaned.slice(8)}`;
+    }
+    return value;
+  };
+
     // Name step
     ({ signupData, setSignupData, progress, isValidName, setSignupStep }) => (
       <>
-        <div className="text-3xl sm:text-4xl font-bold mb-10 text-blue-900">Let's create your profile</div>
-        <label className="block mb-2 text-blue-900 text-base sm:text-lg">What's your name?</label>
+        <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
+        <label className="block mb-2 text-green-900 text-base sm:text-lg">What's your name?</label>
         <input
           type="text"
-          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
           value={signupData.name}
           onChange={e => setSignupData({ ...signupData, name: e.target.value })}
           placeholder="Full Name"
           autoFocus
         />
         <button
-          className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+          className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
           disabled={!isValidName}
           onClick={() => setSignupStep(1)}
           style={{background: 'none'}}
@@ -122,22 +218,22 @@ export default function AuthPage() {
     // Role step
     ({ signupData, setSignupData, progress, isValidRole, setSignupStep }) => (
       <>
-        <div className="text-3xl sm:text-4xl font-bold mb-10 text-blue-900">Let's create your profile</div>
-        <div className="text-2xl font-bold mb-6 text-blue-900">What's your role?</div>
+        <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
+        <div className="text-2xl font-bold mb-6 text-green-900">What's your role?</div>
         <div className="flex flex-col gap-3 mb-6">
           <button
-            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.role === 'student' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500`}
+            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.role === 'student' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500`}
             onClick={() => setSignupData({ ...signupData, role: 'student' })}
             type="button"
           >Student</button>
           <button
-            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.role === 'teacher' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500`}
+            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.role === 'teacher' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500`}
             onClick={() => setSignupData({ ...signupData, role: 'teacher' })}
             type="button"
           >Teacher</button>
         </div>
         <button
-          className="w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+          className="w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
           disabled={!isValidRole}
           onClick={() => setSignupStep(2)}
           style={{background: 'none'}}
@@ -150,22 +246,22 @@ export default function AuthPage() {
     // Gender step (new, after role)
     ({ signupData, setSignupData, progress, isValidGender, setSignupStep }) => (
       <>
-        <div className="text-3xl sm:text-4xl font-bold mb-10 text-blue-900">Let's create your profile</div>
-        <div className="text-2xl font-bold mb-6 text-blue-900">What's your gender?</div>
+        <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
+        <div className="text-2xl font-bold mb-6 text-green-900">What's your gender?</div>
         <div className="flex flex-col gap-3 mb-6">
           <button
-            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.gender === 'male' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500`}
+            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.gender === 'male' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500`}
             onClick={() => setSignupData({ ...signupData, gender: 'male' })}
             type="button"
           >Male</button>
           <button
-            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.gender === 'female' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500`}
+            className={`border rounded-full px-4 py-3 text-left font-semibold transition shadow-sm ${signupData.gender === 'female' ? 'bg-[#e7fbe7] border-[#4ade80] text-black' : 'bg-white text-black'} hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500`}
             onClick={() => setSignupData({ ...signupData, gender: 'female' })}
             type="button"
           >Female</button>
         </div>
         <button
-          className="w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+          className="w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
           disabled={!isValidGender}
           onClick={() => setSignupStep(3)}
           style={{background: 'none'}}
@@ -178,20 +274,20 @@ export default function AuthPage() {
     // Details step (student: LRN, teacher: EmpId)
     ({ signupData, setSignupData, progress, isValidLrn, isValidEmpId, setSignupStep }) => (
       <>
-        <div className="text-3xl sm:text-4xl font-bold mb-10 text-blue-900">Let's create your profile</div>
+        <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
         {signupData.role === 'student' ? (
           <>
-            <label className="block mb-2 text-blue-900 dark:text-white">What’s your LRN? (12 digits)</label>
+            <label className="block mb-2 text-green-900 dark:text-white">What’s your LRN? (12 digits)</label>
             <input
               type="text"
-              className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+              className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
               value={signupData.lrn}
               onChange={e => setSignupData({ ...signupData, lrn: e.target.value.replace(/[^0-9]/g, '').slice(0,12) })}
               placeholder="Learner Reference Number"
               maxLength={12}
             />
             <button
-              className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+              className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
               disabled={!isValidLrn}
               onClick={() => setSignupStep(4)}
               style={{background: 'none'}}
@@ -202,16 +298,16 @@ export default function AuthPage() {
           </>
         ) : (
           <>
-            <label className="block mb-2 text-blue-900 dark:text-white">What's your DepEd Employee Number?</label>
+            <label className="block mb-2 text-green-900 dark:text-white">What's your DepEd Employee Number?</label>
             <input
               type="text"
-              className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+              className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
               value={signupData.empId}
               onChange={e => setSignupData({ ...signupData, empId: e.target.value })}
               placeholder="DepEd Employee Number"
             />
             <button
-              className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+              className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
               disabled={!isValidEmpId}
               onClick={() => setSignupStep(4)}
               style={{background: 'none'}}
@@ -226,11 +322,11 @@ export default function AuthPage() {
     // Age step
     ({ signupData, setSignupData, progress, isValidAge, setSignupStep }) => (
       <>
-        <div className="text-3xl sm:text-4xl font-bold mb-10 text-blue-900">Let's create your profile</div>
-        <label className="block mb-2 text-blue-900 dark:text-white">How old are you?</label>
+        <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
+        <label className="block mb-2 text-green-900 dark:text-white">How old are you?</label>
         <input
           type="number"
-          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
           value={signupData.age}
           onChange={e => setSignupData({ ...signupData, age: e.target.value.replace(/[^0-9]/g, '') })}
           placeholder="Age"
@@ -238,7 +334,7 @@ export default function AuthPage() {
           max={99}
         />
         <button
-          className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+          className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
           disabled={!isValidAge}
           onClick={() => setSignupStep(5)}
           style={{background: 'none'}}
@@ -252,13 +348,13 @@ export default function AuthPage() {
     ({ signupData, setSignupData, progress, isValidGradeLevel, setSignupStep }) => (
       signupData.role === 'student' ? (
         <>
-          <div className="text-3xl sm:text-4xl font-bold mb-10 text-blue-900">Let's create your profile</div>
-          <label className="block mb-2 text-blue-900 dark:text-white">What grade are you in? (7-12)</label>
+          <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
+          <label className="block mb-2 text-green-900 dark:text-white">What grade are you in? (7-12)</label>
           <input
             type="number"
             min={7}
             max={12}
-            className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+            className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
             value={signupData.gradeLevel}
             onChange={e => {
               let val = e.target.value.replace(/[^0-9]/g, '');
@@ -270,7 +366,7 @@ export default function AuthPage() {
             placeholder="Enter your grade (7-12)"
           />
           <button
-            className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+            className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
             disabled={!isValidGradeLevel}
             onClick={() => setSignupStep(6)}
             style={{background: 'none'}}
@@ -284,17 +380,17 @@ export default function AuthPage() {
     // Email step
     ({ signupData, setSignupData, progress, isValidEmail, setSignupStep }) => (
       <>
-        <div className="text-3xl sm:text-4xl font-bold mb-10 text-blue-900">Let's create your profile</div>
-        <label className="block mb-2 text-blue-900 dark:text-white">What's your email?</label>
+        <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
+        <label className="block mb-2 text-green-900 dark:text-white">What's your email?</label>
         <input
           type="email"
-          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
           value={signupData.email}
           onChange={e => setSignupData({ ...signupData, email: e.target.value.trimStart() })}
           placeholder="Email"
         />
         <button
-          className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white"
+          className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
           disabled={!isValidEmail}
           onClick={() => setSignupStep(7)}
           style={{background: 'none'}}
@@ -307,103 +403,86 @@ export default function AuthPage() {
     // Password step (final)
     ({ signupData, setSignupData, isValidPassword, isPasswordMatch, handleFinalSignup }) => (
       <>
-        <div className="text-2xl font-bold mb-6 text-blue-900 dark:text-white">Set a Password</div>
-        <label className="block mb-2 text-blue-900 dark:text-white">Set a password</label>
+        <div className="text-2xl font-bold mb-6 text-green-900 dark:text-white">Set a Password</div>
+        <label className="block mb-2 text-green-900 dark:text-white">Set a password</label>
         <input
           type="password"
-          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
           value={signupData.password}
           onChange={e => setSignupData({ ...signupData, password: e.target.value })}
           placeholder="Password (min 6 chars)"
         />
-        <label className="block mt-4 mb-2 text-blue-900 dark:text-white">Confirm your password</label>
+        <label className="block mt-4 mb-2 text-green-900 dark:text-white">Confirm your password</label>
         <input
           type="password"
-          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
           value={signupData.confirmPassword}
           onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
           placeholder="Confirm Password"
         />
         <button
-          className={`mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-blue-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gradient-to-r from-blue-600 to-blue-400 text-white`}
+          className={`mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white`}
           disabled={!(isValidPassword && isPasswordMatch)}
           onClick={handleFinalSignup}
         >
           Sign Up
         </button>
       </>
-    ),
-  ];
-
-  // Replace renderSignupStep with:
-  const renderSignupStep = () => {
-    const stepProps = {
-      signupData,
-      setSignupData,
-      progress,
-      isValidName,
-      isValidRole,
-      isValidGender, // <-- Added
-      isValidLrn,
-      isValidEmpId,
-      isValidAge,
-      isValidGradeLevel, // <-- Changed
-      isValidEmail,
-      isValidPassword,
-      isPasswordMatch,
-      setSignupStep,
-      handleFinalSignup,
-    };
-    // For student, skip grade level step if not student
-    if (signupStep === 5 && signupData.role !== 'student') { // <-- index +1
-      setSignupStep(6);
-      return null;
-    }
-    // Only render steps that exist
-    if (signupStep < signupSteps.length) {
-      return signupSteps[signupStep](stepProps);
-    }
-    return null;
-  };
+    )
 
   // Final signup handler
   const handleFinalSignup = async () => {
     setIsLoading(true);
     try {
-      const payload = signupData.role === 'student'
-        ? {
-            name: signupData.name,
-            role: 'student' as 'student',
-            lrn: signupData.lrn,
-            email: signupData.email,
-            password: signupData.password,
-            avatarUrl: undefined,
-            bio: undefined,
-            gender: signupData.gender as 'male' | 'female', // <-- Type assertion
-            age: signupData.age ? Number(signupData.age) : undefined,
-            gradeLevel: signupData.gradeLevel ? `Grade ${signupData.gradeLevel}` : undefined,
-          }
-        : {
-            name: signupData.name,
-            role: 'teacher' as 'teacher',
-            lrn: undefined,
-            email: signupData.email,
-            password: signupData.password,
-            avatarUrl: undefined,
-            bio: undefined,
-            gender: signupData.gender as 'male' | 'female', // <-- Type assertion
-            employeeNumber: signupData.empId,
-            age: signupData.age ? Number(signupData.age) : undefined,
-          };
+      // Determine role based on account type and operation type
+      let role: 'farmer' | 'fisherman' | 'buyer' = 'buyer';
+      
+      if (signupData.accountType === 'consumer') {
+        role = 'buyer';
+      } else if (signupData.accountType === 'seller') {
+        if (signupData.operationType === 'farming') {
+          role = 'farmer';
+        } else if (signupData.operationType === 'fishing') {
+          role = 'fisherman';
+        } else if (signupData.operationType === 'both') {
+          role = 'farmer'; // Default to farmer for mixed operations
+        }
+      }
+
+      const payload = {
+        name: signupData.fullName,
+        role: role,
+        email: signupData.email,
+        password: signupData.password,
+        phoneNumber: signupData.phoneNumber,
+        location: {
+          address: `${signupData.barangay}, ${signupData.municipality}, ${signupData.province}`,
+          coordinates: { lat: 0, lng: 0 }, // Default coordinates
+          region: signupData.region,
+          province: signupData.province,
+          city: signupData.municipality,
+        },
+        businessInfo: signupData.accountType === 'seller' ? {
+          businessName: signupData.fullName,
+          businessType: 'individual' as const,
+          description: signupData.description,
+        } : undefined,
+      };
+
       const success = await signup(payload);
       if (success) {
-        toast({ title: 'Account Created', description: 'Welcome!' });
-          navigate('/onboarding');
+        const accountTypeText = signupData.accountType === 'consumer' ? 'consumer' : 'seller';
+        toast({ 
+          title: 'Registration Successful', 
+          description: `Welcome to MarkIt! Your ${accountTypeText} account is ready.` 
+        });
+        navigate('/');
       } else {
-        toast({ title: 'Signup Failed', description: 'Failed to create account. Please try again.', variant: 'destructive' });
+        toast({ title: 'Registration Failed', description: 'Please try again.', variant: 'destructive' });
       }
-    } catch {
-      toast({ title: 'Signup Error', description: 'An error occurred during signup.', variant: 'destructive' });
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast({ title: 'Registration Error', description: 'An error occurred during registration.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -412,13 +491,13 @@ export default function AuthPage() {
   // Splash screen with transition
   if (showSplash) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-green-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden">
         {/* Ambient Particles */}
         <div className="absolute inset-0 pointer-events-none">
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.span
               key={i}
-              className="absolute w-2 h-2 rounded-full bg-blue-400/30 dark:bg-white/20"
+              className="absolute w-2 h-2 rounded-full bg-green-400/30 dark:bg-white/20"
              style={{ left: `${(i * 9) % 100}%`, top: `${(i * 13) % 100}%` }}
               animate={{ y: [0, -12, 0], opacity: [0.3, 0.9, 0.3] }}
               transition={{ duration: 3.5 + (i % 5), repeat: Infinity, ease: 'easeInOut', delay: i * 0.12 }}
@@ -429,7 +508,7 @@ export default function AuthPage() {
         <motion.div
           animate={{ rotate: 360, scale: [1, 1.08, 1] }}
           transition={{ duration: 26, repeat: Infinity, ease: 'linear' }}
-          className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400/30 rounded-full blur-3xl"
+          className="absolute -top-40 -right-40 w-96 h-96 bg-green-400/30 rounded-full blur-3xl"
         />
         <motion.div
           animate={{ rotate: -360, scale: [1.1, 1, 1.1] }}
@@ -442,8 +521,8 @@ export default function AuthPage() {
             transition={{ duration: 0.6 }}
             className="flex flex-col items-center relative z-10"
           >
-            <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-32 h-32 mb-4 animate-float filter invert brightness-200" />
-            <span className="text-blue-900 dark:text-white text-4xl font-bold tracking-widest drop-shadow">EducHub</span>
+            <img src="/markit-logo.svg" alt="MarkIt Logo" className="w-32 h-32 mb-4 animate-float" />
+            <span className="text-green-900 dark:text-white text-4xl font-bold tracking-widest drop-shadow">MarkIt</span>
           </motion.div>
       </div>
     );
@@ -452,31 +531,361 @@ export default function AuthPage() {
   // Full-page onboarding for signup
   if (mode === 'signup') {
     return (
-      <div className="min-h-screen flex flex-col bg-[#2563eb]">
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-2">
-          <button
-            className="text-[#2336a7] font-semibold text-base"
-            onClick={() => setSignupStep(Math.max(0, signupStep - 1))}
-            disabled={signupStep === 0}
-          >
-            {signupStep > 0 ? 'Back' : ''}
-          </button>
-          <div className="w-7 h-7" />
-        </div>
-        {/* Step content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <div className="w-full max-w-md">
-            <div className="bg-white/60 rounded-[2.5rem] shadow-2xl py-12 px-8 flex flex-col gap-10 border border-white/30">
-              <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-8 h-8 mb-4 ml-1 filter invert brightness-200" style={{alignSelf:'flex-start'}} />
-              {renderSignupStep()}
-            </div>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="mb-8">
+            <Button 
+              variant="ghost" 
+              onClick={() => setMode('login')}
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Login
+            </Button>
+            
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Join MarkIt as a Seller
+            </h1>
+            <p className="text-muted-foreground">
+              Complete your registration to start selling at guaranteed fair prices
+            </p>
           </div>
-        </div>
-        {/* Bottom branding */}
-        <div className="flex flex-col items-center pb-6">
-          <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-6 h-6 mb-1 filter invert brightness-200" />
-          <span className="text-white font-semibold text-lg drop-shadow">EducHub</span>
+          
+          {/* Progress Steps */}
+          <div className="flex items-center justify-between mb-8">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = currentStep === step.id;
+              const isCompleted = currentStep > step.id;
+              
+              return (
+                <div key={step.id} className="flex items-center">
+                  <div className={`flex items-center space-x-3 ${index !== steps.length - 1 ? 'flex-1' : ''}`}>
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center border-2
+                      ${isActive ? 'bg-green-600 text-white border-green-600' : 
+                        isCompleted ? 'bg-green-500 text-white border-green-500' : 
+                        'bg-background text-muted-foreground border-border'}
+                    `}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="hidden md:block">
+                      <p className={`text-sm font-medium ${isActive ? 'text-green-600' : isCompleted ? 'text-green-500' : 'text-muted-foreground'}`}>
+                        Step {step.id}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{step.title}</p>
+                    </div>
+                  </div>
+                  {index !== steps.length - 1 && (
+                    <div className={`flex-1 h-px mx-4 ${isCompleted ? 'bg-green-500' : 'bg-border'}`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          <Card className="shadow-medium">
+            <CardHeader>
+              <CardTitle className="text-xl">
+                {steps[currentStep - 1].title}
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      value={signupData.fullName}
+                      onChange={(e) => handleInputChange('fullName', e.target.value)}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">Phone Number *</Label>
+                    <Input
+                      id="phoneNumber"
+                      value={signupData.phoneNumber}
+                      onChange={(e) => {
+                        const formatted = formatPhoneNumber(e.target.value);
+                        handleInputChange('phoneNumber', formatted);
+                      }}
+                      placeholder="+63 9XX XXX XXXX"
+                      maxLength={17}
+                    />
+                    {signupData.phoneNumber && !isValidPhone && (
+                      <p className="text-sm text-red-500">Please enter a valid Philippine mobile number</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={signupData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="region">Region *</Label>
+                      <Select 
+                        value={signupData.region} 
+                        onValueChange={(value) => {
+                          handleInputChange('region', value);
+                          handleInputChange('province', ''); // Reset province when region changes
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(philippineRegions).map(([key, region]) => (
+                            <SelectItem key={key} value={key}>
+                              {region.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="province">Province *</Label>
+                      <Select 
+                        value={signupData.province} 
+                        onValueChange={(value) => handleInputChange('province', value)}
+                        disabled={!signupData.region}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select province" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableProvinces().map((province) => (
+                            <SelectItem key={province} value={province}>
+                              {province}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="municipality">Municipality/City *</Label>
+                      <Input
+                        id="municipality"
+                        value={signupData.municipality}
+                        onChange={(e) => handleInputChange('municipality', e.target.value)}
+                        placeholder="Enter municipality or city"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="barangay">Barangay *</Label>
+                      <Input
+                        id="barangay"
+                        value={signupData.barangay}
+                        onChange={(e) => handleInputChange('barangay', e.target.value)}
+                        placeholder="Enter barangay"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {currentStep === 3 && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="accountType">Account Type *</Label>
+                    <Select value={signupData.accountType} onValueChange={(value) => {
+                      handleInputChange('accountType', value);
+                      // Reset business fields when switching to consumer
+                      if (value === 'consumer') {
+                        handleInputChange('operationType', '');
+                        handleInputChange('primaryProducts', '');
+                        handleInputChange('yearsExperience', '');
+                        handleInputChange('farmSize', '');
+                        handleInputChange('description', '');
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your account type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="consumer">Consumer (Buyer)</SelectItem>
+                        <SelectItem value="seller">Seller (Farmer/Fisher)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {signupData.accountType === 'seller' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="operationType">Type of Operation *</Label>
+                        <Select value={signupData.operationType} onValueChange={(value) => handleInputChange('operationType', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your operation type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="farming">Farming (Rice, Corn, Vegetables, etc.)</SelectItem>
+                            <SelectItem value="fishing">Fishing (Marine/Freshwater)</SelectItem>
+                            <SelectItem value="both">Both Farming and Fishing</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="primaryProducts">Primary Products *</Label>
+                        <Input
+                          id="primaryProducts"
+                          value={signupData.primaryProducts}
+                          onChange={(e) => handleInputChange('primaryProducts', e.target.value)}
+                          placeholder="e.g., Rice, Corn, Bangus, Tilapia"
+                        />
+                      </div>
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="yearsExperience">Years of Experience</Label>
+                          <Input
+                            id="yearsExperience"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={signupData.yearsExperience}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || (!isNaN(Number(value)) && Number(value) >= 0 && Number(value) <= 100)) {
+                                handleInputChange('yearsExperience', value);
+                              }
+                            }}
+                            placeholder="5"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="farmSize">Farm/Operation Size</Label>
+                          <Input
+                            id="farmSize"
+                            value={signupData.farmSize}
+                            onChange={(e) => handleInputChange('farmSize', e.target.value)}
+                            placeholder="e.g., 2 hectares, 5 fish ponds"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Brief Description</Label>
+                        <Textarea
+                          id="description"
+                          value={signupData.description}
+                          onChange={(e) => handleInputChange('description', e.target.value)}
+                          placeholder="Tell us about your farming/fishing operation..."
+                          rows={3}
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  {signupData.accountType === 'consumer' && (
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h4 className="font-semibold text-green-800 mb-2">Consumer Account</h4>
+                      <p className="text-green-700 text-sm">
+                        As a consumer, you'll be able to browse and purchase fresh produce directly from local farmers and fisherfolk at guaranteed fair prices.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {currentStep === 4 && (
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={signupData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        placeholder="Create a secure password"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={signupData.confirmPassword}
+                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        placeholder="Confirm your password"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="text-center space-y-4">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle className="h-10 w-10 text-green-600" />
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-2xl font-bold text-foreground mb-2">
+                        Almost Done!
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Create your password to complete your seller account registration.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Navigation Buttons */}
+              <div className="flex justify-between pt-6">
+                <Button
+                  variant="outline"
+                  onClick={handlePrev}
+                  disabled={currentStep === 1}
+                >
+                  Previous
+                </Button>
+                
+                {currentStep === 4 ? (
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={handleFinalSignup}
+                    disabled={!isValidPassword || !isPasswordMatch || isLoading}
+                  >
+                    {isLoading ? 'Creating Account...' : 'Complete Registration'}
+                  </Button>
+                ) : (
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={handleNext}
+                    disabled={
+                      (currentStep === 1 && (!isValidFullName || !isValidPhone)) ||
+                      (currentStep === 2 && (!isValidRegion || !isValidProvince || !isValidMunicipality || !isValidBarangay)) ||
+                      (currentStep === 3 && (!isValidAccountType || (signupData.accountType === 'seller' && (!isValidOperationType || !isValidPrimaryProducts))))
+                    }
+                  >
+                    Next Step
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -503,13 +912,13 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-green-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden">
       {/* Ambient Particles */}
       <div className="absolute inset-0 pointer-events-none">
         {Array.from({ length: 18 }).map((_, i) => (
           <motion.span
             key={i}
-            className="absolute w-2 h-2 rounded-full bg-blue-400/30 dark:bg-white/20"
+            className="absolute w-2 h-2 rounded-full bg-green-400/30 dark:bg-white/20"
              style={{ left: `${(i * 11) % 100}%`, top: `${(i * 7) % 100}%` }}
             animate={{ y: [0, -10, 0], opacity: [0.35, 0.85, 0.35] }}
             transition={{ duration: 4 + (i % 5), repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 }}
@@ -520,7 +929,7 @@ export default function AuthPage() {
       <motion.div
         animate={{ rotate: 360, scale: [1, 1.06, 1] }}
         transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-        className="absolute -top-56 -right-48 w-[28rem] h-[28rem] bg-blue-300/20 dark:bg-slate-700/30 rounded-full blur-3xl"
+        className="absolute -top-56 -right-48 w-[28rem] h-[28rem] bg-green-300/20 dark:bg-slate-700/30 rounded-full blur-3xl"
       />
       <motion.div
         animate={{ rotate: -360, scale: [1.1, 1, 1.1] }}
@@ -528,7 +937,7 @@ export default function AuthPage() {
         className="absolute -bottom-56 -left-48 w-[28rem] h-[28rem] bg-indigo-300/20 dark:bg-slate-800/30 rounded-full blur-3xl"
       />
       <div
-        className={`absolute inset-0 flex items-center justify-center bg-blue-200/50 dark:bg-slate-800/60 z-10 transition-all duration-500 ease-in-out ${splashTransition}`}
+        className={`absolute inset-0 flex items-center justify-center bg-green-200/50 dark:bg-slate-800/60 z-10 transition-all duration-500 ease-in-out ${splashTransition}`}
         style={{ willChange: 'opacity, transform' }}
       >
         <motion.div
@@ -537,15 +946,15 @@ export default function AuthPage() {
           transition={{ duration: 0.5, repeat: Infinity, repeatType: 'reverse' }}
           className="flex flex-col items-center"
         >
-          <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-32 h-32 mb-4 animate-float filter invert brightness-200" />
-          <span className="text-white text-4xl font-bold tracking-widest">EducHub</span>
+          <img src="/markit-logo.svg" alt="MarkIt Logo" className="w-32 h-32 mb-4 animate-float" />
+          <span className="text-white text-4xl font-bold tracking-widest">MarkIt</span>
         </motion.div>
       </div>
       {/* Logo and EduHub text at the top */}
       <div className="flex flex-col items-center pt-16 pb-4 relative z-10 md:hidden">
-        <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-28 h-28 mb-3 animate-float filter invert brightness-200" />
-        <span className="text-blue-700 dark:text-white text-5xl font-extrabold tracking-widest mb-1 drop-shadow">EducHub</span>
-        <span className="text-base text-blue-600 dark:text-slate-200 font-medium text-center drop-shadow">Smart Tools for Smarter Schools</span>
+        <img src="/markit-logo.svg" alt="MarkIt Logo" className="w-28 h-28 mb-3 animate-float" />
+        <span className="text-green-700 dark:text-white text-5xl font-extrabold tracking-widest mb-1 drop-shadow">MarkIt</span>
+        <span className="text-base text-green-600 dark:text-slate-200 font-medium text-center drop-shadow">Fair Prices for Farmers & Fisherfolk</span>
       </div>
       {/* Glassmorphism card for login/signup */}
       <div className={`flex-1 w-full transition-all duration-500 ease-in-out ${cardTransition}`}
@@ -555,20 +964,20 @@ export default function AuthPage() {
             <div className="md:col-span-1">
               <div className="hidden md:flex flex-col gap-6 pl-8 md:items-center md:text-center">
                 <div className="flex items-center gap-3">
-                  <img src="/graduation-cap-svgrepo-com.svg" alt="Logo" className="w-10 h-10 filter invert brightness-200" />
-                  <span className="text-blue-900 dark:text-white text-3xl lg:text-4xl font-extrabold tracking-wider">EducHub</span>
+                  <img src="/markit-logo.svg" alt="MarkIt Logo" className="w-10 h-10" />
+                  <span className="text-green-900 dark:text-white text-3xl lg:text-4xl font-extrabold tracking-wider">MarkIt</span>
                 </div>
-                <h2 className="text-5xl lg:text-6xl font-extrabold text-blue-900 dark:text-white drop-shadow">Welcome back</h2>
-                <p className="text-xl text-blue-800/80 dark:text-slate-300 max-w-md">Sign in to manage grades, attendance, and reports faster.</p>
-                <ul className="text-base text-blue-900/80 dark:text-slate-300 space-y-2">
-                  <li>• DepEd-compliant grading</li>
-                  <li>• Attendance tracking</li>
-                  <li>• Report cards and analytics</li>
+                <h2 className="text-5xl lg:text-6xl font-extrabold text-green-900 dark:text-white drop-shadow">Welcome back</h2>
+                <p className="text-xl text-green-800/80 dark:text-slate-300 max-w-md">Sign in to connect with buyers, track your harvests, and secure fair prices.</p>
+                <ul className="text-base text-green-900/80 dark:text-slate-300 space-y-2">
+                  <li>• Fair price guarantees</li>
+                  <li>• Direct buyer connections</li>
+                  <li>• Harvest tracking and analytics</li>
                 </ul>
               </div>
             </div>
             {/* Vertical Divider (desktop only) */}
-            <div className="hidden md:block h-full w-px bg-blue-200/60 dark:bg-slate-700/60 md:justify-self-center" aria-hidden="true" />
+            <div className="hidden md:block h-full w-px bg-green-200/60 dark:bg-slate-700/60 md:justify-self-center" aria-hidden="true" />
             <div className="md:col-span-1">
               <motion.div
                 initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -577,14 +986,14 @@ export default function AuthPage() {
                 className="w-full max-w-md md:ml-auto py-12 px-8 flex flex-col gap-10 relative z-10"
               >
               <div className="text-center mb-2">
-                <span className="text-2xl md:text-3xl font-bold text-blue-900 dark:text-white drop-shadow">{mode === 'login' ? 'Login in to your account' : 'Create your Account'}</span>
+                <span className="text-2xl md:text-3xl font-bold text-green-900 dark:text-white drop-shadow">{mode === 'login' ? 'Login in to your account' : 'Create your Account'}</span>
               </div>
               {mode === 'login' ? (
                 <form className="flex flex-col gap-4" onSubmit={handleLogin}>
                   <input
                     type="email"
                     placeholder="Email"
-                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium"
+                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm text-xl font-medium"
                     value={loginData.email}
                     onChange={e => setLoginData({ ...loginData, email: e.target.value.trimStart() })}
                     required
@@ -593,7 +1002,7 @@ export default function AuthPage() {
                     <input
                       type={showLoginPassword ? "text" : "password"}
                       placeholder="Password"
-                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
+                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm text-xl font-medium w-full"
                       value={loginData.password}
                       onChange={e => setLoginData({ ...loginData, password: e.target.value })}
                       required
@@ -610,7 +1019,7 @@ export default function AuthPage() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-blue-700 hover:to-blue-600 transition text-lg tracking-wide"
+                    className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-green-700 hover:to-green-600 transition text-lg tracking-wide"
                     disabled={isLoading}
                   >
                     {isLoading ? 'Signing In...' : 'Sign in'}
@@ -621,7 +1030,7 @@ export default function AuthPage() {
                   <input
                     type="email"
                     placeholder="Email"
-                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium"
+                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm text-xl font-medium"
                     value={signupData.email}
                     onChange={e => setSignupData({ ...signupData, email: e.target.value.trimStart() })}
                     required
@@ -630,7 +1039,7 @@ export default function AuthPage() {
                     <input
                       type={showSignupPassword ? "text" : "password"}
                       placeholder="Password"
-                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
+                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm text-xl font-medium w-full"
                        value={signupData.password}
                       onChange={e => setSignupData({ ...signupData, password: e.target.value })}
                       required
@@ -649,7 +1058,7 @@ export default function AuthPage() {
                     <input
                       type={showSignupConfirmPassword ? "text" : "password"}
                       placeholder="Confirm Password"
-                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition shadow-sm text-xl font-medium w-full"
+                      className="border rounded-full px-6 py-4 pr-14 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm text-xl font-medium w-full"
                        value={signupData.confirmPassword}
                       onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                       required
@@ -666,7 +1075,7 @@ export default function AuthPage() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-blue-700 hover:to-blue-500 transition text-lg tracking-wide"
+                    className="w-full bg-gradient-to-r from-green-600 to-green-400 text-white font-semibold rounded-lg py-2 mt-2 shadow-lg hover:from-green-700 hover:to-green-500 transition text-lg tracking-wide"
                     disabled={isLoading}
                   >
                     {isLoading ? 'Signing Up...' : 'Sign up'}
@@ -676,15 +1085,15 @@ export default function AuthPage() {
               {/* Terms of Agreement Notice */}
               <div className="text-center text-xs text-slate-600 dark:text-slate-300 my-2">
                 By signing in or creating an account, you agree to our
-                <a href="/terms" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                <a href="/terms" className="text-green-600 dark:text-green-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Terms of Service</a>
                 and
-                <a href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+                <a href="/privacy" className="text-green-600 dark:text-green-400 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
               </div>
               <div className="text-center text-base text-slate-700 dark:text-slate-200 mt-4">
                 {mode === 'login' ? (
                   <>Don&apos;t have an account?{' '}
                     <span
-                      className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
+                      className="ml-2 text-green-700 dark:text-green-400 font-bold underline cursor-pointer hover:opacity-80 transition"
                       onClick={() => setMode('signup')}
                       role="button"
                       tabIndex={0}
@@ -695,7 +1104,7 @@ export default function AuthPage() {
                 ) : (
                   <>Already have an account?{' '}
                     <span
-                      className="ml-2 text-blue-700 dark:text-blue-400 font-bold underline cursor-pointer hover:opacity-80 transition"
+                      className="ml-2 text-green-700 dark:text-green-400 font-bold underline cursor-pointer hover:opacity-80 transition"
                       onClick={() => setMode('login')}
                       role="button"
                       tabIndex={0}

@@ -1,4 +1,4 @@
-# EducHub Changelog
+# MarkIt Changelog
 
 ## [1.0.3] - 2024-12-19
 
@@ -75,5 +75,5 @@
 - Performance optimizations
 
 ## [1.0.0] - Initial Release
-- Core EducHub application
+- Core MarkIt application
 - Basic features and functionality 

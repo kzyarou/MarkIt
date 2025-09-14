@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, FileText, Search, User, Settings, Calculator } from 'lucide-react';
+import { Users, FileText, Search, User, Settings, Calculator, MessageCircle, Plus, Bell } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,30 +20,48 @@ export function BottomNavigation() {
   const { user } = useAuth();
 
   // Determine nav items based on user role
-  let navItems = [
-    { id: 'homepage', icon: Users, path: '/' },
-    { id: 'mydashboard', icon: FileText, path: '/mydashboard' },
-    { id: 'settings', icon: Settings, path: '/settings' },
-  ];
+  let navItems = [];
 
-  if (user?.role === 'student') {
+  if (user?.role === 'farmer' || user?.role === 'fisherman') {
+    // Seller (farmer/fisherman) navigation
     navItems = [
-      { id: 'homepage', icon: Users, path: '/' },
-      { id: 'mydashboard', icon: FileText, path: '/mydashboard' },
+      { id: 'search', icon: Search, path: '/search' },
+      { id: 'notifications', icon: Bell, path: '/notifications' },
+      { id: 'create', icon: Plus, path: '/create-harvest' },
+      { id: 'profile', icon: User, path: '/profile' },
+      { id: 'settings', icon: Settings, path: '/settings' },
+    ];
+  } else if (user?.role === 'buyer') {
+    // Buyer navigation
+    navItems = [
+      { id: 'search', icon: Search, path: '/search' },
+      { id: 'notifications', icon: Bell, path: '/notifications' },
+      { id: 'profile', icon: User, path: '/profile' },
+      { id: 'settings', icon: Settings, path: '/settings' },
+    ];
+  } else if (user?.role === 'student') {
+    // Student navigation
+    navItems = [
+      { id: 'search', icon: Search, path: '/search' },
+      { id: 'notifications', icon: Bell, path: '/notifications' },
+      { id: 'create', icon: Plus, path: '/create-harvest' },
       { id: 'calculator', icon: Calculator, path: '/calculator' },
       { id: 'settings', icon: Settings, path: '/settings' },
     ];
-    } else if (user?.role === 'admin') {
-     // Admin users: show Admin tab, hide Sections and Reports
-     navItems = [
-       { id: 'admin', icon: Settings, path: '/admin' },
-       { id: 'settings', icon: Settings, path: '/settings' },
-     ];
-   }
+  } else if (user?.role === 'admin') {
+    // Admin users: show Admin tab
+    navItems = [
+      { id: 'admin', icon: Settings, path: '/admin' },
+      { id: 'settings', icon: Settings, path: '/settings' },
+    ];
+  }
 
   const isActive = (path: string) => {
     if (path === '/') {
       return location.pathname === '/' || location.pathname.startsWith('/section');
+    }
+    if (path === '/create-harvest') {
+      return location.pathname === '/create-harvest' || location.pathname.startsWith('/create-');
     }
     return location.pathname === path;
   };
@@ -56,7 +74,11 @@ export function BottomNavigation() {
   const activeColor = isDark ? '#3d4e5e' : '#3b82f6';
   const inactiveColor = isDark ? '#e2e8f0' : '#1f2937';
 
-  const gridCols = navItems.length === 2 ? 'grid-cols-2' : navItems.length === 3 ? 'grid-cols-3' : 'grid-cols-4';
+  const gridCols = navItems.length === 2 ? 'grid-cols-2' : 
+                   navItems.length === 3 ? 'grid-cols-3' : 
+                   navItems.length === 4 ? 'grid-cols-4' : 
+                   navItems.length === 5 ? 'grid-cols-5' : 
+                   navItems.length === 6 ? 'grid-cols-6' : 'grid-cols-4';
 
   return (
     <motion.nav

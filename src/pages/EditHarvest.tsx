@@ -9,9 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Save, Package, MapPin, DollarSign, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, Package, MapPin, DollarSign, Calendar, Trash2 } from 'lucide-react';
 import { Harvest } from '@/types/markit';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'sonner';
 
@@ -36,10 +36,17 @@ const EditHarvest = () => {
       certifications: [] as string[]
     },
     basePrice: 0,
-    biddingEndDate: '',
+    harvestDate: new Date(),
+    expiryDate: null as Date | null,
     location: {
       address: '',
       coordinates: { lat: 0, lng: 0 }
+    },
+    deliveryOptions: {
+      pickup: true,
+      delivery: false,
+      deliveryRadius: '',
+      deliveryFee: ''
     }
   });
 
@@ -52,42 +59,38 @@ const EditHarvest = () => {
   const loadHarvest = async () => {
     try {
       setLoading(true);
-      // For now, we'll use mock data since we don't have Firebase integration yet
-      // In a real app, you would fetch from Firestore:
-      // const harvestDoc = await getDoc(doc(db, 'harvests', harvestId));
       
-      // Mock harvest data
-      const mockHarvest: Harvest = {
-        id: harvestId!,
-        farmerId: user?.id || 'current-user',
-        farmerName: user?.name || 'You',
-        title: 'Premium Organic Rice',
-        description: 'High-quality organic rice from my farm. No pesticides used.',
-        category: 'agricultural',
-        subcategory: 'Rice',
-        quantity: { amount: 50, unit: 'kg' },
-        quality: { grade: 'A', freshness: 'fresh', organic: true, certifications: ['Organic'] },
-        basePrice: 50,
-        currentHighestBid: 65,
-        biddingEndDate: '2024-01-20T18:00:00Z',
-        status: 'available',
-        location: { address: user?.location?.address || 'Your Location', coordinates: { lat: 0, lng: 0 } },
-        images: [],
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
-      };
+      if (!harvestId) {
+        throw new Error('No harvest ID provided');
+      }
 
-      setHarvest(mockHarvest);
+      const harvestDoc = await getDoc(doc(db, 'harvests', harvestId));
+      
+      if (!harvestDoc.exists()) {
+        throw new Error('Harvest not found');
+      }
+
+      const harvestData = harvestDoc.data() as Harvest;
+      const harvestWithId = { ...harvestData, id: harvestDoc.id };
+
+      setHarvest(harvestWithId);
       setFormData({
-        title: mockHarvest.title,
-        description: mockHarvest.description,
-        category: mockHarvest.category,
-        subcategory: mockHarvest.subcategory,
-        quantity: mockHarvest.quantity,
-        quality: mockHarvest.quality,
-        basePrice: mockHarvest.basePrice,
-        biddingEndDate: mockHarvest.biddingEndDate.split('T')[0], // Convert to date input format
-        location: mockHarvest.location
+        title: harvestWithId.title,
+        description: harvestWithId.description,
+        category: harvestWithId.category,
+        subcategory: harvestWithId.subcategory,
+        quantity: harvestWithId.quantity,
+        quality: harvestWithId.quality,
+        basePrice: harvestWithId.basePrice,
+        harvestDate: new Date(harvestWithId.harvestDate),
+        expiryDate: harvestWithId.expiryDate ? new Date(harvestWithId.expiryDate) : null,
+        location: harvestWithId.location,
+        deliveryOptions: harvestWithId.deliveryOptions || {
+          pickup: true,
+          delivery: false,
+          deliveryRadius: '',
+          deliveryFee: ''
+        }
       });
     } catch (error) {
       console.error('Error loading harvest:', error);
@@ -137,17 +140,51 @@ const EditHarvest = () => {
         return;
       }
 
-      // In a real app, you would update Firestore:
-      // await updateDoc(doc(db, 'harvests', harvestId!), {
-      //   ...formData,
-      //   updatedAt: new Date().toISOString()
-      // });
+      if (!harvestId) {
+        toast.error('No harvest ID found');
+        return;
+      }
+
+      // Update Firestore
+      const updateData = {
+        ...formData,
+        harvestDate: formData.harvestDate.toISOString(),
+        ...(formData.expiryDate && { expiryDate: formData.expiryDate.toISOString() }),
+        updatedAt: new Date().toISOString()
+      };
+
+      await updateDoc(doc(db, 'harvests', harvestId), updateData);
 
       toast.success('Harvest updated successfully!');
-      navigate(`/harvest/${harvestId}`);
+      navigate('/mydashboard');
     } catch (error) {
       console.error('Error updating harvest:', error);
       toast.error('Failed to update harvest');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!harvestId) {
+      toast.error('No harvest ID found');
+      return;
+    }
+
+    const confirmed = window.confirm('Are you sure you want to delete this harvest? This action cannot be undone.');
+    
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await deleteDoc(doc(db, 'harvests', harvestId));
+      toast.success('Harvest deleted successfully!');
+      navigate('/mydashboard');
+    } catch (error) {
+      console.error('Error deleting harvest:', error);
+      toast.error('Failed to delete harvest');
     } finally {
       setSaving(false);
     }
@@ -362,7 +399,7 @@ const EditHarvest = () => {
                 <MapPin className="h-5 w-5" />
                 <span>Location & Timing</span>
               </CardTitle>
-              <CardDescription>Set the location and bidding end date</CardDescription>
+              <CardDescription>Set the location and harvest dates</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -375,15 +412,80 @@ const EditHarvest = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="biddingEndDate">Bidding End Date *</Label>
-                <Input
-                  id="biddingEndDate"
-                  type="datetime-local"
-                  value={formData.biddingEndDate}
-                  onChange={(e) => handleInputChange('biddingEndDate', e.target.value)}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="harvestDate">Harvest Date *</Label>
+                  <Input
+                    id="harvestDate"
+                    type="date"
+                    value={formData.harvestDate.toISOString().split('T')[0]}
+                    onChange={(e) => handleInputChange('harvestDate', new Date(e.target.value))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="expiryDate">Expiry Date (Optional)</Label>
+                  <Input
+                    id="expiryDate"
+                    type="date"
+                    value={formData.expiryDate ? formData.expiryDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => handleInputChange('expiryDate', e.target.value ? new Date(e.target.value) : null)}
+                  />
+                </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Delivery Options */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Delivery Options</CardTitle>
+              <CardDescription>Configure pickup and delivery options</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="pickup"
+                  checked={formData.deliveryOptions.pickup}
+                  onCheckedChange={(checked) => handleInputChange('deliveryOptions.pickup', checked)}
+                />
+                <Label htmlFor="pickup">Available for Pickup</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="delivery"
+                  checked={formData.deliveryOptions.delivery}
+                  onCheckedChange={(checked) => handleInputChange('deliveryOptions.delivery', checked)}
+                />
+                <Label htmlFor="delivery">Available for Delivery</Label>
+              </div>
+
+              {formData.deliveryOptions.delivery && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="deliveryRadius">Delivery Radius (km)</Label>
+                    <Input
+                      id="deliveryRadius"
+                      type="number"
+                      value={formData.deliveryOptions.deliveryRadius}
+                      onChange={(e) => handleInputChange('deliveryOptions.deliveryRadius', e.target.value)}
+                      placeholder="10"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="deliveryFee">Delivery Fee (₱)</Label>
+                    <Input
+                      id="deliveryFee"
+                      type="number"
+                      value={formData.deliveryOptions.deliveryFee}
+                      onChange={(e) => handleInputChange('deliveryOptions.deliveryFee', e.target.value)}
+                      placeholder="50"
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -407,10 +509,20 @@ const EditHarvest = () => {
               
               <Button 
                 variant="outline" 
-                onClick={() => navigate(`/harvest/${harvestId}`)}
+                onClick={() => navigate('/mydashboard')}
                 className="w-full"
               >
                 Cancel
+              </Button>
+
+              <Button 
+                variant="destructive" 
+                onClick={handleDelete}
+                disabled={saving}
+                className="w-full"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Harvest
               </Button>
             </CardContent>
           </Card>
@@ -438,11 +550,41 @@ const EditHarvest = () => {
                   <span>Grade:</span>
                   <Badge variant="secondary">{formData.quality.grade}</Badge>
                 </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Freshness:</span>
+                  <Badge variant="outline">{formData.quality.freshness}</Badge>
+                </div>
                 {formData.quality.organic && (
                   <Badge variant="outline" className="text-green-600 border-green-600">
                     Organic
                   </Badge>
                 )}
+                <div className="flex items-center justify-between text-sm">
+                  <span>Harvest Date:</span>
+                  <span className="font-medium">{formData.harvestDate.toLocaleDateString()}</span>
+                </div>
+                {formData.expiryDate && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Expiry Date:</span>
+                    <span className="font-medium">{formData.expiryDate.toLocaleDateString()}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <span>Location:</span>
+                  <span className="font-medium">{formData.location.address || 'Not set'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Pickup:</span>
+                  <Badge variant={formData.deliveryOptions.pickup ? "default" : "secondary"}>
+                    {formData.deliveryOptions.pickup ? "Available" : "Not Available"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Delivery:</span>
+                  <Badge variant={formData.deliveryOptions.delivery ? "default" : "secondary"}>
+                    {formData.deliveryOptions.delivery ? "Available" : "Not Available"}
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>

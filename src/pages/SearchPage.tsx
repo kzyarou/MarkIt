@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Mail, Hash, Filter } from 'lucide-react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { Search, User, Mail, Hash, Filter, MessageCircle } from 'lucide-react';
+import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useTheme } from 'next-themes';
 import {
@@ -25,6 +28,8 @@ interface MockUser {
 }
 
 export default function SearchPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const { bottomNavClass } = useBottomNav();
   const [searchResults, setSearchResults] = useState<MockUser[]>([]);
@@ -35,6 +40,54 @@ export default function SearchPage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const hubColor = isDark ? '#52677D' : '#2563eb';
+
+  const handleStartConversation = async (userId: string, userName: string) => {
+    if (!user?.id) return;
+
+    try {
+      // Check if conversation already exists
+      const conversationsRef = collection(db, 'conversations');
+      const q = query(
+        conversationsRef,
+        where('participants', 'array-contains', user.id)
+      );
+      
+      const snapshot = await getDocs(q);
+      const existingConv = snapshot.docs.find(doc => {
+        const data = doc.data();
+        return data.participants.includes(userId);
+      });
+
+      if (existingConv) {
+        // Conversation already exists, just navigate to messages
+        navigate('/messages');
+        return;
+      }
+
+      // Create new conversation in Firestore
+      const conversationData = {
+        participants: [user.id, userId],
+        lastMessage: {
+          content: `Started conversation with ${userName}`,
+          senderId: user.id,
+          timestamp: serverTimestamp()
+        },
+        lastActivity: serverTimestamp(),
+        unreadCount: {
+          [user.id]: 0,
+          [userId]: 1
+        }
+      };
+
+      await addDoc(conversationsRef, conversationData);
+
+      // Navigate to messages page
+      navigate('/messages');
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      alert('Error starting conversation. Please try again.');
+    }
+  };
 
   const handleSearch = async (roleOverride?: 'all' | 'student' | 'teacher') => {
     const roleToUse = roleOverride || roleFilter;
@@ -95,7 +148,7 @@ export default function SearchPage() {
     <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
       <MarkItHeader subtitle="Search" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-mobile-content">
         {/* Search Form */}
         <Card className="mb-8">
           <CardHeader>
@@ -203,8 +256,17 @@ export default function SearchPage() {
                                 ))}
                               </div>
                             )}
-                            <div className="mt-3">
+                            <div className="mt-3 flex flex-col sm:flex-row gap-2">
                               <a href={`/profile/${user.id}`} className={`block w-full sm:inline-block sm:w-auto px-3 py-2 text-sm rounded transition text-center ${isAdmin ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>View Full Profile</a>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleStartConversation(user.id, user.name)}
+                                className="w-full sm:w-auto"
+                              >
+                                <MessageCircle className="h-4 w-4 mr-2" />
+                                Message
+                              </Button>
                             </div>
                           </div>
                         </div>

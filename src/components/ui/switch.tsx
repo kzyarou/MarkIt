@@ -26,7 +26,7 @@ const Switch = React.forwardRef<
         src={"/Animation - 1751774113345.lottie"}
         style={{ width: 20, height: 20 }}
         direction={checked ? 1 : -1}
-        play={typeof checked === 'boolean' ? true : undefined}
+        play={typeof checked === 'boolean' ? "true" : undefined}
       />
     </SwitchPrimitives.Thumb>
   </SwitchPrimitives.Root>

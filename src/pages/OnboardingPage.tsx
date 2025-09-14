@@ -211,7 +211,7 @@ export default function OnboardingPage() {
 
       {/* Main Content */}
       <div
-        className="relative h-screen flex items-center justify-center px-6 pt-32 pb-20"
+        className="relative h-screen flex items-center justify-center px-6 pt-32 pb-mobile-content"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >

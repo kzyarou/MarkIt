@@ -48,7 +48,7 @@ class MockUpdateServer {
       return {
         available: true,
         version: '1.0.6',
-        description: '🧪 TEST UPDATE: EducHub v1.0.6 is available! This is a test update to verify the update notification system is working properly. New features include enhanced update checking, improved UI, and better performance.',
+        description: '🧪 TEST UPDATE: MarkIt v1.0.6 is available! This is a test update to verify the update notification system is working properly. New features include enhanced update checking, improved UI, and better performance.',
         packageSize: 4500000, // 4.5MB
         mandatory: false,
         downloadUrl: 'https://downloads.educhub.com/v1.0.6',
@@ -81,7 +81,7 @@ class MockUpdateServer {
       },
       {
         available: false,
-        description: 'You are running the latest version of EducHub!'
+        description: 'You are running the latest version of MarkIt!'
       }
     ];
 
@@ -101,7 +101,7 @@ class MockUpdateServer {
     return {
       available: true,
       version,
-      description: `Detailed information for EducHub ${version}`,
+      description: `Detailed information for MarkIt ${version}`,
       packageSize: 4000000,
       mandatory: false,
       downloadUrl: `https://downloads.educhub.com/v${version}`,

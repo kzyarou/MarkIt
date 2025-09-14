@@ -331,7 +331,7 @@ export default function SectionDetailsPage() {
   return (
     <div className={`min-h-screen bg-background dark:bg-[#181c24] px-2 ${bottomNavClass}`}>
       <div className="pt-6 pb-2">
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-2 text-foreground dark:text-white">EducHub</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-2 text-foreground dark:text-white">MarkIt</h1>
         <div className="flex items-center mb-6 max-w-7xl mx-auto">
           <Button variant="ghost" className={`mr-4 ${isDark ? 'text-white hover:bg-gray-700' : 'text-foreground hover:bg-accent'}`} onClick={() => navigate('/')}>
             <ArrowLeft className="w-5 h-5 mr-2" />

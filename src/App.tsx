@@ -21,7 +21,6 @@ import CreateHarvest from "./pages/CreateHarvest";
 import EditHarvest from "./pages/EditHarvest";
 import HarvestDetailsPage from "./pages/HarvestDetailsPage";
 import MyHarvestsPage from "./pages/MyHarvestsPage";
-import BiddingPage from "./pages/BiddingPage";
 import MarketplacePage from './pages/MarketplacePage';
 import SearchPage from './pages/SearchPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -35,9 +34,13 @@ import PriceGuaranteeDetailPage from './pages/PriceGuaranteeDetailPage';
 import FAQPage from './pages/FAQPage';
 import DataPrivacyPage from './pages/DataPrivacyPage';
 import TermsPage from './pages/TermsPage';
+import HelpPage from './pages/HelpPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 import PriceCalculatorPage from './pages/PriceCalculatorPage';
-import BidManagementPage from './pages/BidManagementPage';
 import AdminPage from './pages/AdminPage';
+import NotificationsPage from './pages/NotificationsPage';
+import MessagesPage from './pages/MessagesPage';
 
 import { getSections } from '@/services/gradesService';
 import { loadDraft } from '@/utils/localDrafts';
@@ -146,16 +149,6 @@ function AppRoutes() {
           <MarketplacePage />
         </RoleProtectedRoute>
       } />
-      <Route path="/bidding/:harvestId" element={
-        <RoleProtectedRoute allowedRoles={['buyer']}>
-          <BiddingPage />
-        </RoleProtectedRoute>
-      } />
-      <Route path="/my-bids" element={
-        <RoleProtectedRoute allowedRoles={['buyer']}>
-          <BidManagementPage />
-        </RoleProtectedRoute>
-      } />
       <Route path="/transactions" element={
         <ProtectedRoute>
           {user?.role === 'admin' ? (
@@ -195,6 +188,16 @@ function AppRoutes() {
           <SearchPage />
         </ProtectedRoute>
       } />
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <NotificationsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <MessagesPage />
+        </ProtectedRoute>
+      } />
       <Route path="/profile" element={
         <ProtectedRoute>
           <ProfilePage />
@@ -213,6 +216,9 @@ function AppRoutes() {
       <Route path="/faq" element={<FAQPage />} />
       <Route path="/privacy" element={<DataPrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/help" element={<HelpPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -243,7 +249,12 @@ const App = () => (
       <Toaster />
       <Sonner />
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
           <AuthProvider>
             <ScrollToTop />
             {process.env.NODE_ENV !== 'development' && <UpdateBanner />}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBottomNav } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +24,8 @@ import { Link } from 'react-router-dom';
 import { Harvest } from '@/types/markit';
 
 const MyHarvestsPage = () => {
-  const { user } = useState();
+  const { user } = useAuth();
+  const { bottomNavClass } = useBottomNav();
   const [harvests, setHarvests] = useState<Harvest[]>([]);
   const [filteredHarvests, setFilteredHarvests] = useState<Harvest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,8 +64,6 @@ const MyHarvestsPage = () => {
           harvestDate: new Date().toISOString(),
           status: 'available',
           basePrice: 45,
-          currentHighestBid: 52,
-          biddingEndDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
           location: {
             address: 'Barangay San Jose, Nueva Ecija',
             coordinates: { lat: 15.5, lng: 121.0 }
@@ -96,8 +96,6 @@ const MyHarvestsPage = () => {
           harvestDate: new Date().toISOString(),
           status: 'sold',
           basePrice: 35,
-          currentHighestBid: 38,
-          biddingEndDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           location: {
             address: 'Barangay San Jose, Nueva Ecija',
             coordinates: { lat: 15.5, lng: 121.0 }
@@ -130,8 +128,6 @@ const MyHarvestsPage = () => {
           harvestDate: new Date().toISOString(),
           status: 'expired',
           basePrice: 120,
-          currentHighestBid: 0,
-          biddingEndDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
           location: {
             address: 'Barangay San Jose, Nueva Ecija',
             coordinates: { lat: 15.5, lng: 121.0 }
@@ -230,16 +226,17 @@ const MyHarvestsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+    <div className={`min-h-screen ${bottomNavClass}`}>
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-mobile-content">
+        <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">My Harvests</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">My Harvests</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
               Manage your posted harvests and track their performance
             </p>
           </div>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link to="/create-harvest">
               <Plus className="h-4 w-4 mr-2" />
               Post New Harvest
@@ -248,7 +245,7 @@ const MyHarvestsPage = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -297,8 +294,8 @@ const MyHarvestsPage = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
@@ -306,13 +303,13 @@ const MyHarvestsPage = () => {
               placeholder="Search your harvests..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-10 sm:h-11"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-10 sm:h-11 w-full sm:w-auto"
           >
             <option value="all">All Status</option>
             <option value="available">Available</option>
@@ -327,19 +324,21 @@ const MyHarvestsPage = () => {
       <div className="space-y-4">
         {filteredHarvests.map((harvest) => (
           <Card key={harvest.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-start space-x-3 mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-lg font-semibold">{harvest.title}</h3>
-                        <Badge className={getStatusColor(harvest.status)}>
-                          {harvest.status}
-                        </Badge>
-                        <Badge className={getQualityColor(harvest.quality.grade)}>
-                          {harvest.quality.grade}
-                        </Badge>
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mb-1">
+                        <h3 className="text-base sm:text-lg font-semibold">{harvest.title}</h3>
+                        <div className="flex flex-wrap gap-1 sm:gap-2">
+                          <Badge className={`${getStatusColor(harvest.status)} text-xs`}>
+                            {harvest.status}
+                          </Badge>
+                          <Badge className={`${getQualityColor(harvest.quality.grade)} text-xs`}>
+                            {harvest.quality.grade}
+                          </Badge>
+                        </div>
                       </div>
                       <p className="text-muted-foreground text-sm mb-2">
                         {harvest.subcategory} • {harvest.quantity.amount} {harvest.quantity.unit}
@@ -358,35 +357,30 @@ const MyHarvestsPage = () => {
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
-                        <span>{getTimeRemaining(harvest.biddingEndDate)}</span>
+                        <span>Available</span>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="font-medium">₱{harvest.basePrice}/{harvest.quantity.unit}</span>
-                      {harvest.currentHighestBid && harvest.currentHighestBid > harvest.basePrice && (
-                        <span className="text-green-600 font-medium">
-                          (₱{harvest.currentHighestBid} highest)
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 ml-4">
-                  <Button asChild variant="outline" size="sm">
+                <div className="flex items-center space-x-1 sm:space-x-2 ml-2 sm:ml-4">
+                  <Button asChild variant="outline" size="sm" className="text-xs sm:text-sm">
                     <Link to={`/harvest/${harvest.id}`}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
+                      <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="hidden sm:inline">View</span>
                     </Link>
                   </Button>
                   {harvest.status === 'available' && (
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="hidden sm:inline">Edit</span>
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="p-1 sm:p-2">
+                    <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>
@@ -415,6 +409,7 @@ const MyHarvestsPage = () => {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };

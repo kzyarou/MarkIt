@@ -48,7 +48,7 @@ const SubjectsECRPage = () => {
   return (
     <div className={`min-h-screen pb-8 px-2 sm:px-4 ${isDark ? 'bg-[#181c24]' : 'bg-background'}`}>
       <div className="pt-6 pb-2">
-        <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-2 ${isDark ? 'text-white' : 'text-foreground'}`}>EducHub</h1>
+        <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight text-center mb-2 ${isDark ? 'text-white' : 'text-foreground'}`}>MarkIt</h1>
         <div className="flex flex-col sm:flex-row items-start sm:items-center mb-6 gap-2 sm:gap-0 max-w-4xl mx-auto">
           <Button variant="ghost" className={`mr-0 sm:mr-4 mb-2 sm:mb-0 ${isDark ? 'text-white hover:bg-gray-700' : 'text-foreground hover:bg-accent'}`} onClick={() => navigate(`/section/${section.id}`)}>
             <ArrowLeft className="w-5 h-5 mr-2" />

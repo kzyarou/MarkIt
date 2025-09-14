@@ -3,7 +3,6 @@
 
 export type UserRole = 'farmer' | 'fisherman' | 'buyer' | 'admin';
 export type ProductCategory = 'agricultural' | 'fisheries' | 'livestock' | 'dairy' | 'poultry';
-export type BidStatus = 'active' | 'accepted' | 'rejected' | 'expired' | 'withdrawn';
 export type TransactionStatus = 'pending' | 'confirmed' | 'in_transit' | 'delivered' | 'completed' | 'cancelled';
 export type HarvestStatus = 'available' | 'reserved' | 'sold' | 'expired';
 
@@ -67,9 +66,7 @@ export interface Harvest {
   harvestDate: string;
   expiryDate?: string;
   status: HarvestStatus;
-  basePrice: number; // Minimum acceptable price per unit
-  currentHighestBid?: number;
-  biddingEndDate: string;
+  basePrice: number; // Fixed price per unit
   location: {
     address: string;
     coordinates: {
@@ -87,23 +84,6 @@ export interface Harvest {
   updatedAt: string;
 }
 
-// Bidding System
-export interface Bid {
-  id: string;
-  harvestId: string;
-  buyerId: string;
-  buyerName: string;
-  buyerBusinessType: string;
-  amount: number; // Price per unit
-  totalAmount: number; // Total price for the entire quantity
-  quantity: number; // Quantity they want to buy
-  message?: string;
-  status: BidStatus;
-  isAutoBid: boolean; // For automatic bidding up to a maximum
-  maxBidAmount?: number; // For auto-bidding
-  createdAt: string;
-  updatedAt: string;
-}
 
 // Transaction
 export interface Transaction {
@@ -111,7 +91,6 @@ export interface Transaction {
   harvestId: string;
   farmerId: string;
   buyerId: string;
-  bidId: string;
   quantity: number;
   unitPrice: number;
   totalAmount: number;
@@ -169,12 +148,13 @@ export interface Review {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'bid_received' | 'bid_accepted' | 'bid_rejected' | 'harvest_expired' | 'price_alert' | 'transaction_update' | 'system';
+  type: 'harvest_expired' | 'harvest_expiring' | 'price_alert' | 'transaction_update' | 'system';
   title: string;
   message: string;
   data?: any; // Additional data for the notification
-  isRead: boolean;
+  read: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 // Market Analytics
@@ -241,7 +221,6 @@ export interface SearchFilters {
 export interface DashboardStats {
   totalHarvests: number;
   activeHarvests: number;
-  totalBids: number;
   totalTransactions: number;
   totalEarnings: number;
   averageRating: number;

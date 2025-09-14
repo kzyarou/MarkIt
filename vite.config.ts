@@ -40,8 +40,8 @@ export default defineConfig({
       manifest: {
         name: 'MarkIt',
         short_name: 'MarkIt',
-        description: 'Academic Management Platform',
-        theme_color: '#2563eb',
+        description: 'Fisherfolk and Farmer Price Guarantee Platform',
+        theme_color: '#228B22',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',

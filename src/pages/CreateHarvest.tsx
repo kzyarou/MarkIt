@@ -11,15 +11,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Upload, X, Plus } from 'lucide-react';
+import { CalendarIcon, Upload, X, Plus, Image, Video, FileImage } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Harvest, ProductCategory } from '@/types/markit';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const CreateHarvest = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -40,7 +44,10 @@ const CreateHarvest = () => {
     harvestDate: new Date(),
     expiryDate: null as Date | null,
     basePrice: '',
-    biddingEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    location: {
+      address: '',
+      coordinates: { lat: 0, lng: 0 }
+    },
     deliveryOptions: {
       pickup: true,
       delivery: false,
@@ -95,7 +102,7 @@ const CreateHarvest = () => {
     setFormData(prev => ({
       ...prev,
       [parentField]: {
-        ...prev[parentField as keyof typeof prev],
+        ...(prev[parentField as keyof typeof prev] as Record<string, any>),
         [childField]: value
       }
     }));
@@ -111,6 +118,81 @@ const CreateHarvest = () => {
           : [...prev.quality.certifications, certification]
       }
     }));
+  };
+
+  const handleMediaUpload = async (files: FileList) => {
+    const fileArray = Array.from(files);
+    
+    // Validate file types and sizes
+    const validFiles = fileArray.filter(file => {
+      const isValidType = file.type.startsWith('image/') || file.type.startsWith('video/');
+      const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit
+      
+      if (!isValidType) {
+        alert(`${file.name} is not a valid image or video file.`);
+        return false;
+      }
+      
+      if (!isValidSize) {
+        alert(`${file.name} is too large. Maximum size is 10MB.`);
+        return false;
+      }
+      
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    // Check total file count limit
+    if (mediaFiles.length + validFiles.length > 10) {
+      alert('Maximum 10 media files allowed.');
+      return;
+    }
+
+    setUploadingMedia(true);
+    
+    try {
+      // Convert files to base64 for storage in Firestore
+      const base64Promises = validFiles.map(async (file) => {
+        return new Promise<{ file: File; url: string }>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            resolve({ file, url: reader.result as string });
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+      
+      const base64Results = await Promise.all(base64Promises);
+      
+      setMediaFiles(prev => [...prev, ...base64Results.map(result => result.file)]);
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...base64Results.map(result => result.url)]
+      }));
+      
+      console.log('Media files converted to base64 successfully');
+      
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      alert('Error uploading media files. Please try again.');
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  const removeMediaFile = async (index: number) => {
+    // Remove from both arrays
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const getFileType = (file: File) => {
+    if (file.type.startsWith('video/')) return 'video';
+    return 'image';
   };
 
   const validateForm = () => {
@@ -155,28 +237,34 @@ const CreateHarvest = () => {
         quality: formData.quality,
         images: formData.images,
         harvestDate: formData.harvestDate.toISOString(),
-        expiryDate: formData.expiryDate?.toISOString(),
+        ...(formData.expiryDate && { expiryDate: formData.expiryDate.toISOString() }),
         status: 'available',
         basePrice: parseFloat(formData.basePrice),
-        biddingEndDate: formData.biddingEndDate.toISOString(),
         location: {
-          address: user?.location?.address || '',
+          address: formData.location.address || user?.location?.address || 'Location not set',
           coordinates: user?.location?.coordinates || { lat: 0, lng: 0 }
         },
         deliveryOptions: {
           pickup: formData.deliveryOptions.pickup,
           delivery: formData.deliveryOptions.delivery,
-          deliveryRadius: formData.deliveryOptions.deliveryRadius ? parseFloat(formData.deliveryOptions.deliveryRadius) : undefined,
-          deliveryFee: formData.deliveryOptions.deliveryFee ? parseFloat(formData.deliveryOptions.deliveryFee) : undefined
+          ...(formData.deliveryOptions.deliveryRadius && { deliveryRadius: parseFloat(formData.deliveryOptions.deliveryRadius) }),
+          ...(formData.deliveryOptions.deliveryFee && { deliveryFee: parseFloat(formData.deliveryOptions.deliveryFee) })
         }
       };
 
       console.log('Submitting harvest:', harvestData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Save to Firestore
+      const harvestRef = await addDoc(collection(db, 'harvests'), {
+        ...harvestData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
       
-      navigate('/my-harvests');
+      console.log('Harvest created with ID:', harvestRef.id);
+      
+      // Navigate to dashboard to see the new post
+      navigate('/');
     } catch (error) {
       console.error('Error creating harvest:', error);
     } finally {
@@ -185,11 +273,11 @@ const CreateHarvest = () => {
   };
 
   return (
-    <div className="h-screen overflow-y-auto">
-      <div className="container mx-auto p-6 max-w-4xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Post New Harvest</h1>
-          <p className="text-muted-foreground">
+    <div className="min-h-screen overflow-y-auto pb-mobile-content">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-4xl">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">Post New Harvest</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Share your harvest with buyers and get fair prices through our bidding system
           </p>
         </div>
@@ -202,7 +290,7 @@ const CreateHarvest = () => {
             <CardDescription>Tell buyers about your harvest</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Harvest Title *</Label>
                 <Input
@@ -267,6 +355,77 @@ const CreateHarvest = () => {
           </CardContent>
         </Card>
 
+        {/* Media Upload */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Photos & Videos</CardTitle>
+            <CardDescription>Upload photos and videos of your harvest (max 10 files, 10MB each)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Upload Area */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+              <input
+                type="file"
+                id="media-upload"
+                multiple
+                accept="image/*,video/*"
+                onChange={(e) => e.target.files && handleMediaUpload(e.target.files)}
+                className="hidden"
+                disabled={uploadingMedia}
+              />
+              <label htmlFor="media-upload" className="cursor-pointer">
+                <div className="flex flex-col items-center space-y-2">
+                  {uploadingMedia ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  ) : (
+                    <Upload className="h-8 w-8 text-gray-400" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">
+                      {uploadingMedia ? 'Uploading...' : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG, MP4, MOV up to 10MB each
+                    </p>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Media Preview */}
+            {formData.images.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {formData.images.map((imageUrl, index) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                      {getFileType(mediaFiles[index]) === 'image' ? (
+                        <img
+                          src={imageUrl}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <video
+                          src={imageUrl}
+                          className="w-full h-full object-cover"
+                          controls
+                        />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeMediaFile(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1 truncate">{mediaFiles[index]?.name || `File ${index + 1}`}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Quantity and Quality */}
         <Card>
           <CardHeader>
@@ -274,7 +433,7 @@ const CreateHarvest = () => {
             <CardDescription>Specify the amount and quality of your harvest</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="quantity">Quantity *</Label>
                 <div className="flex space-x-2">
@@ -320,7 +479,7 @@ const CreateHarvest = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Quality Grade</Label>
                 <Select value={formData.quality.grade} onValueChange={(value) => handleNestedInputChange('quality', 'grade', value)}>
@@ -383,10 +542,10 @@ const CreateHarvest = () => {
         <Card>
           <CardHeader>
             <CardTitle>Important Dates</CardTitle>
-            <CardDescription>Set harvest and bidding dates</CardDescription>
+            <CardDescription>Set harvest and expiry dates</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Harvest Date</Label>
                 <Popover>
@@ -414,30 +573,53 @@ const CreateHarvest = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Bidding End Date</Label>
+                <Label>Expiry Date (Optional)</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !formData.biddingEndDate && "text-muted-foreground"
+                        !formData.expiryDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.biddingEndDate ? format(formData.biddingEndDate, "PPP") : "Pick a date"}
+                      {formData.expiryDate ? format(formData.expiryDate, "PPP") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={formData.biddingEndDate}
-                      onSelect={(date) => handleInputChange('biddingEndDate', date || new Date())}
+                      selected={formData.expiryDate}
+                      onSelect={(date) => handleInputChange('expiryDate', date)}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Location */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Location</CardTitle>
+            <CardDescription>Where is your harvest located?</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="location">Harvest Location *</Label>
+              <Input
+                id="location"
+                value={formData.location.address}
+                onChange={(e) => handleNestedInputChange('location', 'address', e.target.value)}
+                placeholder="Enter your farm or harvest location (e.g., Barangay San Jose, Nueva Ecija)"
+                className="mt-1"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Be specific about your location to help buyers find you
+              </p>
             </div>
           </CardContent>
         </Card>

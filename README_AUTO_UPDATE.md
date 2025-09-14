@@ -1,6 +1,6 @@
-# EducHub Auto-Update System
+# MarkIt Auto-Update System
 
-This document describes the comprehensive auto-update system implemented in EducHub, which provides seamless updates across web and mobile platforms.
+This document describes the comprehensive auto-update system implemented in MarkIt, which provides seamless updates across web and mobile platforms.
 
 ## Overview
 
@@ -251,4 +251,4 @@ For issues or questions:
 
 ---
 
-**Note**: This system ensures users always have the latest version of EducHub with minimal disruption to their workflow. 
+**Note**: This system ensures users always have the latest version of MarkIt with minimal disruption to their workflow. 

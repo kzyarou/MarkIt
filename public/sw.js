@@ -1,4 +1,4 @@
-// Service Worker for EducHub PWA
+// Service Worker for MarkIt PWA
 const CACHE_NAME = 'educhub-v1';
 const urlsToCache = [
   '/',

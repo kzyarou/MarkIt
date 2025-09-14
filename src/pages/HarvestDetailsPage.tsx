@@ -17,18 +17,25 @@ import {
   Calendar,
   MessageCircle,
   Heart,
-  Share2
+  Share2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2
 } from 'lucide-react';
-import { Harvest, Bid } from '@/types/markit';
+import { Harvest } from '@/types/markit';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { ConversationService } from '@/services/conversationService';
 
 const HarvestDetailsPage = () => {
   const { harvestId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [harvest, setHarvest] = useState<Harvest | null>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isBidding, setIsBidding] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [isStartingConversation, setIsStartingConversation] = useState(false);
 
   useEffect(() => {
     if (harvestId) {
@@ -39,75 +46,19 @@ const HarvestDetailsPage = () => {
   const loadHarvestDetails = async () => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual Firebase query
-      const mockHarvest: Harvest = {
-        id: harvestId || '',
-        farmerId: 'farmer1',
-        farmerName: 'Juan Dela Cruz',
-        title: 'Fresh Organic Tomatoes',
-        description: 'Freshly harvested organic tomatoes from our farm. Grown without pesticides and chemical fertilizers. These tomatoes are perfect for salads, cooking, and canning. We use sustainable farming practices and our tomatoes are certified organic.',
-        category: 'agricultural',
-        subcategory: 'Vegetables',
-        quantity: { amount: 50, unit: 'kg' },
-        quality: {
-          grade: 'A',
-          freshness: 'fresh',
-          organic: true,
-          certifications: ['Organic', 'Non-GMO', 'Fair Trade']
-        },
-        images: [],
-        harvestDate: new Date().toISOString(),
-        status: 'available',
-        basePrice: 45,
-        currentHighestBid: 52,
-        biddingEndDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        location: {
-          address: 'Barangay San Jose, Nueva Ecija',
-          coordinates: { lat: 15.5, lng: 121.0 }
-        },
-        deliveryOptions: {
-          pickup: true,
-          delivery: true,
-          deliveryRadius: 50,
-          deliveryFee: 200
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      if (!harvestId) {
+        throw new Error('No harvest ID provided');
+      }
 
-      const mockBids: Bid[] = [
-        {
-          id: '1',
-          harvestId: harvestId || '',
-          buyerId: 'buyer1',
-          buyerName: 'Green Restaurant',
-          amount: 52,
-          totalAmount: 2600,
-          quantity: 50,
-          message: 'We need fresh tomatoes for our daily operations. Can deliver today?',
-          status: 'active',
-          isAutoBid: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: '2',
-          harvestId: harvestId || '',
-          buyerId: 'buyer2',
-          buyerName: 'City School District',
-          amount: 48,
-          totalAmount: 2400,
-          quantity: 50,
-          message: 'For our school feeding program. Prefer organic produce.',
-          status: 'active',
-          isAutoBid: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
+      const harvestDoc = await getDoc(doc(db, 'harvests', harvestId));
+      
+      if (!harvestDoc.exists()) {
+        throw new Error('Harvest not found');
+      }
 
-      setHarvest(mockHarvest);
-      setBids(mockBids);
+      const harvestData = harvestDoc.data() as Harvest;
+      const harvestWithId = { ...harvestData, id: harvestDoc.id };
+      setHarvest(harvestWithId);
     } catch (error) {
       console.error('Error loading harvest details:', error);
     } finally {
@@ -115,18 +66,30 @@ const HarvestDetailsPage = () => {
     }
   };
 
-  const getTimeRemaining = (endDate: string) => {
-    const now = new Date().getTime();
-    const end = new Date(endDate).getTime();
-    const diff = end - now;
+  const handleContactSeller = async () => {
+    if (!user?.id || !harvest?.farmerId) {
+      navigate('/auth');
+      return;
+    }
 
-    if (diff <= 0) return 'Expired';
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-    if (days > 0) return `${days}d ${hours}h left`;
-    return `${hours}h left`;
+    setIsStartingConversation(true);
+    try {
+      const conversationId = await ConversationService.startConversation(
+        user.id,
+        harvest.farmerId,
+        harvest.id,
+        harvest.title
+      );
+      
+      // Navigate to messages page with the conversation selected
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      // Fallback to general messages page
+      navigate('/messages');
+    } finally {
+      setIsStartingConversation(false);
+    }
   };
 
   const getQualityColor = (grade: string) => {
@@ -139,13 +102,26 @@ const HarvestDetailsPage = () => {
     }
   };
 
-  const handleBidClick = () => {
-    if (user?.role === 'buyer') {
-      navigate(`/bidding/${harvestId}`);
-    } else {
-      setIsBidding(true);
+  const openImageViewer = (index: number) => {
+    setSelectedImageIndex(index);
+  };
+
+  const closeImageViewer = () => {
+    setSelectedImageIndex(null);
+  };
+
+  const nextImage = () => {
+    if (harvest && selectedImageIndex !== null) {
+      setSelectedImageIndex((selectedImageIndex + 1) % harvest.images.length);
     }
   };
+
+  const prevImage = () => {
+    if (harvest && selectedImageIndex !== null) {
+      setSelectedImageIndex(selectedImageIndex === 0 ? harvest.images.length - 1 : selectedImageIndex - 1);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -175,9 +151,9 @@ const HarvestDetailsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-6xl">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
@@ -187,10 +163,10 @@ const HarvestDetailsPage = () => {
           Back
         </Button>
         
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <h1 className="text-3xl font-bold">{harvest.title}</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold">{harvest.title}</h1>
               <Badge className={getQualityColor(harvest.quality.grade)}>
                 {harvest.quality.grade}
               </Badge>
@@ -206,7 +182,7 @@ const HarvestDetailsPage = () => {
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
-                <span>{getTimeRemaining(harvest.biddingEndDate)}</span>
+                <span>Available</span>
               </div>
             </div>
           </div>
@@ -224,9 +200,52 @@ const HarvestDetailsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {/* Images */}
+          {harvest.images && harvest.images.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Images</CardTitle>
+                <CardDescription>Click on any image to view full size</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {harvest.images.map((imageUrl, index) => (
+                    <div 
+                      key={index} 
+                      className="aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer group relative"
+                      onClick={() => openImageViewer(index)}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`Harvest image ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        onError={(e) => {
+                          console.error('Image failed to load:', imageUrl);
+                          // Show fallback content
+                          const container = e.currentTarget.parentElement;
+                          if (container) {
+                            container.innerHTML = `
+                              <div class="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-500">
+                                <Package class="h-8 w-8 mb-2" />
+                                <span class="text-sm">Image failed to load</span>
+                              </div>
+                            `;
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                        <Maximize2 className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Description */}
           <Card>
             <CardHeader>
@@ -279,44 +298,10 @@ const HarvestDetailsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Bidding History */}
-          {bids.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Bidding History</CardTitle>
-                <CardDescription>
-                  {bids.length} bid{bids.length !== 1 ? 's' : ''} received
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {bids.map((bid) => (
-                    <div key={bid.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-medium">{bid.buyerName}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {bid.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{bid.message}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold">₱{bid.amount}/{harvest.quantity.unit}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {bid.quantity} {harvest.quantity.unit}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Pricing */}
           <Card>
             <CardHeader>
@@ -327,28 +312,18 @@ const HarvestDetailsPage = () => {
                 <span className="text-muted-foreground">Base Price:</span>
                 <span className="text-lg font-semibold">₱{harvest.basePrice}/{harvest.quantity.unit}</span>
               </div>
-              {harvest.currentHighestBid && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Highest Bid:</span>
-                  <span className="text-lg font-semibold text-green-600">
-                    ₱{harvest.currentHighestBid}/{harvest.quantity.unit}
-                  </span>
-                </div>
-              )}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Quantity:</span>
                 <span className="text-lg font-semibold">
                   {harvest.quantity.amount} {harvest.quantity.unit}
                 </span>
               </div>
-              {harvest.currentHighestBid && (
-                <div className="flex items-center justify-between border-t pt-2">
-                  <span className="text-muted-foreground">Total Value:</span>
-                  <span className="text-xl font-bold text-green-600">
-                    ₱{(harvest.currentHighestBid * harvest.quantity.amount).toLocaleString()}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center justify-between border-t pt-2">
+                <span className="text-muted-foreground">Total Value:</span>
+                <span className="text-xl font-bold text-green-600">
+                  ₱{(harvest.basePrice * harvest.quantity.amount).toLocaleString()}
+                </span>
+              </div>
             </CardContent>
           </Card>
 
@@ -385,32 +360,24 @@ const HarvestDetailsPage = () => {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {user?.role === 'buyer' ? (
-              <Button 
-                onClick={handleBidClick}
-                className="w-full"
-                size="lg"
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Place Bid
-              </Button>
-            ) : user?.role === 'farmer' || user?.role === 'fisherman' ? (
+            {user?.role === 'farmer' || user?.role === 'fisherman' ? (
               <div className="space-y-2">
-                <Button className="w-full" size="lg">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Manage Bids
-                </Button>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate(`/harvest/${harvestId}/edit`)}
+                >
                   Edit Harvest
                 </Button>
               </div>
             ) : (
               <Button 
-                onClick={() => navigate('/auth')}
+                onClick={handleContactSeller}
+                disabled={isStartingConversation}
                 className="w-full"
                 size="lg"
               >
-                Sign In to Bid
+                {isStartingConversation ? 'Starting conversation...' : 'Contact Seller'}
               </Button>
             )}
           </div>
@@ -434,13 +401,66 @@ const HarvestDetailsPage = () => {
                 <span>{harvest.subcategory}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Bidding Ends:</span>
-                <span>{new Date(harvest.biddingEndDate).toLocaleDateString()}</span>
+                <span className="text-muted-foreground">Harvest Date:</span>
+                <span>{new Date(harvest.harvestDate).toLocaleDateString()}</span>
               </div>
+              {harvest.expiryDate && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Expiry Date:</span>
+                  <span>{new Date(harvest.expiryDate).toLocaleDateString()}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Full-screen Image Viewer */}
+      {selectedImageIndex !== null && harvest && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {/* Close button */}
+            <button
+              onClick={closeImageViewer}
+              className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Navigation buttons */}
+            {harvest.images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+
+            {/* Image */}
+            <img
+              src={harvest.images[selectedImageIndex]}
+              alt={`Harvest image ${selectedImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+            />
+
+            {/* Image counter */}
+            {harvest.images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                {selectedImageIndex + 1} / {harvest.images.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

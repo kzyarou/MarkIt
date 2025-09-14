@@ -9,7 +9,8 @@ import {
   LogOut,
   Settings,
   FileText,
-  Calculator
+  Calculator,
+  MessageCircle
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { motion } from "framer-motion"
@@ -38,6 +39,7 @@ function useNavItems() {
     { id: "home", label: "Home", icon: Home, path: "/" },
     { id: "search", label: "Search", icon: Search, path: "/search" },
     { id: "create", label: "Create", icon: Plus, path: "/create-harvest" },
+    { id: "messages", label: "Messages", icon: MessageCircle, path: "/messages" },
     { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
   ]
@@ -46,9 +48,14 @@ function useNavItems() {
   if (user?.role === "farmer" || user?.role === "fisherman") {
     coreItems.splice(2, 0, { id: "mydashboard", label: "My Dashboard", icon: FileText, path: "/mydashboard" })
   } else if (user?.role === "buyer") {
-    coreItems.splice(2, 0, { id: "mydashboard", label: "My Dashboard", icon: FileText, path: "/mydashboard" })
-  } else if (user?.role === "student") {
-    coreItems.splice(2, 0, { id: "calculator", label: "Calculator", icon: Calculator, path: "/calculator" })
+    // Buyers don't need dashboard or create - they only have search and messages
+    coreItems = [
+      { id: "home", label: "Home", icon: Home, path: "/" },
+      { id: "search", label: "Search", icon: Search, path: "/search" },
+      { id: "messages", label: "Messages", icon: MessageCircle, path: "/messages" },
+      { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
+      { id: "profile", label: "Profile", icon: User, path: "/profile" },
+    ]
   } else if (user?.role === "admin") {
     coreItems = [
       { id: "admin", label: "Admin", icon: Settings, path: "/admin" },
@@ -63,6 +70,13 @@ function SidebarNav() {
   const items = useNavItems()
   const location = useLocation()
   const navigate = useNavigate()
+  const [unreadCount, setUnreadCount] = React.useState(0)
+
+  // Mock unread count - in a real app, this would come from Firebase
+  React.useEffect(() => {
+    // Simulate unread notifications count
+    setUnreadCount(3) // This would be fetched from your notifications service
+  }, [])
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -104,7 +118,14 @@ function SidebarNav() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Icon className={`h-6 w-6 ${active ? 'text-green-600' : 'text-gray-500'}`} />
+                <div className="relative">
+                  <Icon className={`h-6 w-6 ${active ? 'text-green-600' : 'text-gray-500'}`} />
+                  {item.id === 'notifications' && unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </div>
+                  )}
+                </div>
                 <span className="text-sm">{item.label}</span>
               </motion.button>
             )
