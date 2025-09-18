@@ -17,10 +17,12 @@ import { cn } from '@/lib/utils';
 import { Harvest, ProductCategory } from '@/types/markit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const CreateHarvest = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -273,12 +275,12 @@ const CreateHarvest = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-y-auto pb-mobile-content">
+    <div className="min-h-screen overflow-y-auto overflow-x-hidden pb-mobile-content">
       <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-4xl">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold">Post New Harvest</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('create_post_title') || 'Post New Harvest'}</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-2">
-            Share your harvest with buyers and get fair prices through our bidding system
+            {t('create_post_subtitle') || 'Share your harvest with buyers and get fair prices through our bidding system'}
           </p>
         </div>
 
@@ -286,16 +288,16 @@ const CreateHarvest = () => {
         {/* Basic Information */}
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>Tell buyers about your harvest</CardDescription>
+            <CardTitle>{t('create_basic_info') || 'Basic Information'}</CardTitle>
+            <CardDescription>{t('create_basic_info_desc') || 'Tell buyers about your harvest'}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Harvest Title *</Label>
+                <Label htmlFor="title">{t('create_title_label') || 'Harvest Title *'}</Label>
                 <Input
                   id="title"
-                  placeholder="e.g., Fresh Organic Tomatoes"
+                  placeholder={t('create_title_ph') || 'e.g., Fresh Organic Tomatoes'}
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   className={errors.title ? 'border-red-500' : ''}
@@ -304,10 +306,10 @@ const CreateHarvest = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
+                <Label htmlFor="category">{t('create_category_label') || 'Category *'}</Label>
                 <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
                   <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={t('create_category_ph') || 'Select category'} />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(categories).map(([key, value]) => (
@@ -323,10 +325,10 @@ const CreateHarvest = () => {
 
             {formData.category && (
               <div className="space-y-2">
-                <Label htmlFor="subcategory">Subcategory *</Label>
+                <Label htmlFor="subcategory">{t('create_subcategory_label') || 'Subcategory *'}</Label>
                 <Select value={formData.subcategory} onValueChange={(value) => handleInputChange('subcategory', value)}>
                   <SelectTrigger className={errors.subcategory ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select subcategory" />
+                    <SelectValue placeholder={t('create_subcategory_ph') || 'Select subcategory'} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories[formData.category as keyof typeof categories]?.map((item) => (
@@ -341,10 +343,10 @@ const CreateHarvest = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">{t('create_description_label') || 'Description *'}</Label>
               <Textarea
                 id="description"
-                placeholder="Describe your harvest, growing methods, quality, etc."
+                placeholder={t('create_description_ph') || 'Describe your harvest, growing methods, quality, etc.'}
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 className={errors.description ? 'border-red-500' : ''}
@@ -358,8 +360,8 @@ const CreateHarvest = () => {
         {/* Media Upload */}
         <Card>
           <CardHeader>
-            <CardTitle>Photos & Videos</CardTitle>
-            <CardDescription>Upload photos and videos of your harvest (max 10 files, 10MB each)</CardDescription>
+            <CardTitle>{t('create_media') || 'Photos & Videos'}</CardTitle>
+            <CardDescription>{t('create_media_desc') || 'Upload photos and videos of your harvest (max 10 files, 10MB each)'}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Upload Area */}
@@ -382,10 +384,10 @@ const CreateHarvest = () => {
                   )}
                   <div>
                     <p className="text-sm font-medium">
-                      {uploadingMedia ? 'Uploading...' : 'Click to upload or drag and drop'}
+                      {uploadingMedia ? (t('uploading') || 'Uploading...') : (t('upload_hint') || 'Click to upload or drag and drop')}
                     </p>
                     <p className="text-xs text-gray-500">
-                      PNG, JPG, MP4, MOV up to 10MB each
+                      {t('upload_types_hint') || 'PNG, JPG, MP4, MOV up to 10MB each'}
                     </p>
                   </div>
                 </div>
@@ -429,13 +431,13 @@ const CreateHarvest = () => {
         {/* Quantity and Quality */}
         <Card>
           <CardHeader>
-            <CardTitle>Quantity & Quality</CardTitle>
-            <CardDescription>Specify the amount and quality of your harvest</CardDescription>
+            <CardTitle>{t('create_quantity_quality') || 'Quantity & Quality'}</CardTitle>
+            <CardDescription>{t('create_quantity_quality_desc') || 'Specify the amount and quality of your harvest'}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity *</Label>
+                <Label htmlFor="quantity">{t('create_quantity_label') || 'Quantity *'}</Label>
                 <div className="flex space-x-2">
                   <Input
                     id="quantity"
@@ -447,7 +449,7 @@ const CreateHarvest = () => {
                   />
                   <Select value={formData.quantity.unit} onValueChange={(value) => handleNestedInputChange('quantity', 'unit', value)}>
                     <SelectTrigger className={errors.quantityUnit ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Unit" />
+                      <SelectValue placeholder={t('unit') || 'Unit'} />
                     </SelectTrigger>
                     <SelectContent>
                       {units.map((unit) => (
@@ -466,7 +468,7 @@ const CreateHarvest = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="basePrice">Base Price (₱ per unit) *</Label>
+                <Label htmlFor="basePrice">{t('create_base_price') || 'Base Price (₱ per unit) *'}</Label>
                 <Input
                   id="basePrice"
                   type="number"
@@ -481,38 +483,38 @@ const CreateHarvest = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Quality Grade</Label>
+                <Label>{t('create_quality_grade') || 'Quality Grade'}</Label>
                 <Select value={formData.quality.grade} onValueChange={(value) => handleNestedInputChange('quality', 'grade', value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Premium">Premium</SelectItem>
-                    <SelectItem value="A">Grade A</SelectItem>
-                    <SelectItem value="B">Grade B</SelectItem>
-                    <SelectItem value="C">Grade C</SelectItem>
+                    <SelectItem value="Premium">{t('grade_premium') || 'Premium'}</SelectItem>
+                    <SelectItem value="A">{t('grade_a') || 'Grade A'}</SelectItem>
+                    <SelectItem value="B">{t('grade_b') || 'Grade B'}</SelectItem>
+                    <SelectItem value="C">{t('grade_c') || 'Grade C'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Freshness</Label>
+                <Label>{t('create_freshness') || 'Freshness'}</Label>
                 <Select value={formData.quality.freshness} onValueChange={(value) => handleNestedInputChange('quality', 'freshness', value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fresh">Fresh</SelectItem>
-                    <SelectItem value="frozen">Frozen</SelectItem>
-                    <SelectItem value="dried">Dried</SelectItem>
-                    <SelectItem value="processed">Processed</SelectItem>
+                    <SelectItem value="fresh">{t('fresh') || 'Fresh'}</SelectItem>
+                    <SelectItem value="frozen">{t('frozen') || 'Frozen'}</SelectItem>
+                    <SelectItem value="dried">{t('dried') || 'Dried'}</SelectItem>
+                    <SelectItem value="processed">{t('processed') || 'Processed'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Certifications</Label>
+              <Label>{t('create_certifications') || 'Certifications'}</Label>
               <div className="flex flex-wrap gap-2">
                 {certificationOptions.map((cert) => (
                   <Badge
@@ -533,7 +535,7 @@ const CreateHarvest = () => {
                 checked={formData.quality.organic}
                 onCheckedChange={(checked) => handleNestedInputChange('quality', 'organic', checked)}
               />
-              <Label htmlFor="organic">Organic/All-natural</Label>
+              <Label htmlFor="organic">{t('create_organic') || 'Organic/All-natural'}</Label>
             </div>
           </CardContent>
         </Card>
@@ -541,13 +543,13 @@ const CreateHarvest = () => {
         {/* Dates */}
         <Card>
           <CardHeader>
-            <CardTitle>Important Dates</CardTitle>
-            <CardDescription>Set harvest and expiry dates</CardDescription>
+            <CardTitle>{t('create_dates') || 'Important Dates'}</CardTitle>
+            <CardDescription>{t('create_dates_desc') || 'Set harvest and expiry dates'}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Harvest Date</Label>
+                <Label>{t('create_harvest_date') || 'Harvest Date'}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -558,7 +560,7 @@ const CreateHarvest = () => {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.harvestDate ? format(formData.harvestDate, "PPP") : "Pick a date"}
+                      {formData.harvestDate ? format(formData.harvestDate, "PPP") : (t('pick_date') || 'Pick a date')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -573,7 +575,7 @@ const CreateHarvest = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Expiry Date (Optional)</Label>
+                <Label>{t('create_expiry_date') || 'Expiry Date (Optional)'}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -584,7 +586,7 @@ const CreateHarvest = () => {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.expiryDate ? format(formData.expiryDate, "PPP") : "Pick a date"}
+                      {formData.expiryDate ? format(formData.expiryDate, "PPP") : (t('pick_date') || 'Pick a date')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -604,21 +606,21 @@ const CreateHarvest = () => {
         {/* Location */}
         <Card>
           <CardHeader>
-            <CardTitle>Location</CardTitle>
-            <CardDescription>Where is your harvest located?</CardDescription>
+            <CardTitle>{t('create_location') || 'Location'}</CardTitle>
+            <CardDescription>{t('create_location_desc') || 'Where is your harvest located?'}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="location">Harvest Location *</Label>
+              <Label htmlFor="location">{t('create_location_label') || 'Harvest Location *'}</Label>
               <Input
                 id="location"
                 value={formData.location.address}
                 onChange={(e) => handleNestedInputChange('location', 'address', e.target.value)}
-                placeholder="Enter your farm or harvest location (e.g., Barangay San Jose, Nueva Ecija)"
+                placeholder={t('create_location_ph') || 'Enter your farm or harvest location (e.g., Barangay San Jose, Nueva Ecija)'}
                 className="mt-1"
               />
               <p className="text-sm text-muted-foreground mt-1">
-                Be specific about your location to help buyers find you
+                {t('create_location_hint') || 'Be specific about your location to help buyers find you'}
               </p>
             </div>
           </CardContent>
@@ -627,8 +629,8 @@ const CreateHarvest = () => {
         {/* Delivery Options */}
         <Card>
           <CardHeader>
-            <CardTitle>Delivery Options</CardTitle>
-            <CardDescription>How can buyers receive your harvest?</CardDescription>
+            <CardTitle>{t('create_delivery') || 'Delivery Options'}</CardTitle>
+            <CardDescription>{t('create_delivery_desc') || 'How can buyers receive your harvest?'}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-4">
@@ -638,7 +640,7 @@ const CreateHarvest = () => {
                   checked={formData.deliveryOptions.pickup}
                   onCheckedChange={(checked) => handleNestedInputChange('deliveryOptions', 'pickup', checked)}
                 />
-                <Label htmlFor="pickup">Allow pickup from your location</Label>
+                <Label htmlFor="pickup">{t('create_allow_pickup') || 'Allow pickup from your location'}</Label>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -647,13 +649,13 @@ const CreateHarvest = () => {
                   checked={formData.deliveryOptions.delivery}
                   onCheckedChange={(checked) => handleNestedInputChange('deliveryOptions', 'delivery', checked)}
                 />
-                <Label htmlFor="delivery">Offer delivery service</Label>
+                <Label htmlFor="delivery">{t('create_offer_delivery') || 'Offer delivery service'}</Label>
               </div>
 
               {formData.deliveryOptions.delivery && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
                   <div className="space-y-2">
-                    <Label htmlFor="deliveryRadius">Delivery Radius (km)</Label>
+                    <Label htmlFor="deliveryRadius">{t('create_delivery_radius') || 'Delivery Radius (km)'}</Label>
                     <Input
                       id="deliveryRadius"
                       type="number"
@@ -663,7 +665,7 @@ const CreateHarvest = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="deliveryFee">Delivery Fee (₱)</Label>
+                    <Label htmlFor="deliveryFee">{t('create_delivery_fee') || 'Delivery Fee (₱)'}</Label>
                     <Input
                       id="deliveryFee"
                       type="number"
@@ -681,10 +683,10 @@ const CreateHarvest = () => {
         {/* Submit Buttons */}
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={() => navigate('/my-harvests')}>
-            Cancel
+            {t('cancel') || 'Cancel'}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Posting...' : 'Post Harvest'}
+            {isSubmitting ? (t('posting') || 'Posting...') : (t('post_harvest') || 'Post Harvest')}
           </Button>
         </div>
         </form>

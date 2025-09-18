@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Notification } from '@/types/markit';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 const NotificationsPage = () => {
   const { user } = useAuth();
+  const { bottomNavClass } = useBottomNav();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'transactions' | 'system'>('all');
@@ -201,10 +203,10 @@ const NotificationsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className={`min-h-screen overflow-x-hidden container mx-auto px-4 py-6 max-w-screen-md pb-mobile-content ${bottomNavClass}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-start sm:items-center justify-between mb-6 gap-4 flex-wrap">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Bell className="h-8 w-8 text-green-600" />
             Notifications
@@ -219,7 +221,7 @@ const NotificationsPage = () => {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -241,7 +243,7 @@ const NotificationsPage = () => {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {[
           { key: 'all', label: 'All', count: notifications.length },
           { key: 'unread', label: 'Unread', count: unreadCount },
@@ -310,10 +312,10 @@ const NotificationsPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className={`font-semibold ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
+                            <h3 className={`font-semibold break-words ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
                               {notification.title}
                             </h3>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-gray-600 mt-1 break-words">
                               {notification.message}
                             </p>
                             <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">

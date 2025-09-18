@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, User, MapPin, Briefcase, CheckCircle } from "lucide-react";
+import { storage, db } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { auth } from '@/lib/firebase';
 
 const steps = [
   { id: 1, title: "Personal Information", icon: User },
@@ -122,6 +126,11 @@ export default function AuthPage() {
     yearsExperience: "",
     farmSize: "",
     description: "",
+    // Seller verification
+    documentType: "", // 'BIR' | 'BarangayClearance'
+    // Note: file kept in state only for UX; actual upload handled after signup elsewhere
+    // Using any typing here to avoid importing File type in TSX JSX context
+    documentFile: undefined as any,
     
     // Step 4
     password: "",
@@ -171,6 +180,7 @@ export default function AuthPage() {
   const isValidPrimaryProducts = signupData.accountType === 'consumer' || signupData.primaryProducts.trim().length > 0;
   const isValidPassword = signupData.password.length >= 6;
   const isPasswordMatch = signupData.password === signupData.confirmPassword;
+  const isValidSellerDocs = signupData.accountType !== 'seller' || (signupData.documentType === 'BIR' || signupData.documentType === 'BarangayClearance');
 
   // Get available provinces based on selected region
   const getAvailableProvinces = () => {
@@ -467,14 +477,47 @@ export default function AuthPage() {
           businessType: 'individual' as const,
           description: signupData.description,
         } : undefined,
+        verificationStatus: signupData.accountType === 'seller' ? {
+          isVerified: signupData.documentType === 'BIR',
+          documents: signupData.documentType ? [{ type: signupData.documentType as any, url: '', uploadedAt: new Date().toISOString() }] : []
+        } : undefined,
+        membershipStatus: signupData.accountType === 'seller'
+          ? (signupData.documentType === 'BIR'
+              ? { tier: 'lifetime', documentType: 'BIR' }
+              : signupData.documentType === 'BarangayClearance'
+                ? { tier: 'temporary', documentType: 'BarangayClearance' }
+                : { tier: 'none' })
+          : { tier: 'none' }
       };
 
       const success = await signup(payload);
       if (success) {
+        // If user uploaded a document, upload to Storage and update profile
+        try {
+          const currentUser = auth.currentUser;
+          if (currentUser && signupData.documentFile && signupData.accountType === 'seller' && signupData.documentType) {
+            const ext = (signupData.documentFile.name.split('.').pop() || 'bin').toLowerCase();
+            const path = `users/${currentUser.uid}/documents/${Date.now()}_${signupData.documentType}.${ext}`;
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, signupData.documentFile);
+            const url = await getDownloadURL(storageRef);
+            const userRef = doc(db, 'users', currentUser.uid);
+            const isBir = signupData.documentType === 'BIR';
+            await updateDoc(userRef, {
+              'verificationStatus.documents': arrayUnion({ type: signupData.documentType, url, uploadedAt: new Date().toISOString() }),
+              'verificationStatus.isVerified': isBir,
+              membershipStatus: isBir ? { tier: 'lifetime', documentType: 'BIR' } : { tier: 'temporary', documentType: 'BarangayClearance' },
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        } catch (e) {
+          console.error('Document upload failed:', e);
+          // Non-fatal; user remains registered
+        }
         const accountTypeText = signupData.accountType === 'consumer' ? 'consumer' : 'seller';
         toast({ 
           title: 'Registration Successful', 
-          description: `Welcome to MarkIt! Your ${accountTypeText} account is ready.` 
+          description: `Welcome to MarkIt! Your ${accountTypeText} account is ready.${signupData.documentFile ? ' Document saved.' : ''}` 
         });
         navigate('/');
       } else {
@@ -795,6 +838,29 @@ export default function AuthPage() {
                           rows={3}
                         />
                       </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="documentType">Verification Document *</Label>
+                          <Select value={signupData.documentType} onValueChange={(value) => handleInputChange('documentType', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select document type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="BIR">BIR Certificate (lifetime membership)</SelectItem>
+                              <SelectItem value="BarangayClearance">Barangay Clearance (temporary access)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="documentFile">Upload Document (optional)</Label>
+                          <Input id="documentFile" type="file" accept="image/*,application/pdf" onChange={(e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            setSignupData(prev => ({ ...prev, documentFile: file }));
+                          }} />
+                          <p className="text-xs text-muted-foreground">You can also upload later in your profile.</p>
+                        </div>
+                      </div>
                     </>
                   )}
                   
@@ -877,7 +943,7 @@ export default function AuthPage() {
                     disabled={
                       (currentStep === 1 && (!isValidFullName || !isValidPhone)) ||
                       (currentStep === 2 && (!isValidRegion || !isValidProvince || !isValidMunicipality || !isValidBarangay)) ||
-                      (currentStep === 3 && (!isValidAccountType || (signupData.accountType === 'seller' && (!isValidOperationType || !isValidPrimaryProducts))))
+                      (currentStep === 3 && (!isValidAccountType || (signupData.accountType === 'seller' && (!isValidOperationType || !isValidPrimaryProducts || !isValidSellerDocs))))
                     }
                   >
                     Next Step

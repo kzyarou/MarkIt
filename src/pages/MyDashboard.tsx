@@ -22,10 +22,12 @@ import { Link } from 'react-router-dom';
 import { Harvest, Transaction, DashboardStats, ProductCategory } from '@/types/markit';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const MyDashboard = () => {
   const { user } = useAuth();
   const { bottomNavClass } = useBottomNav();
+  const { t } = useLanguage();
   const [stats, setStats] = useState<DashboardStats>({
     totalHarvests: 0,
     activeHarvests: 0,
@@ -413,12 +415,12 @@ const MyDashboard = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-green-50 to-green-100 ${bottomNavClass}`}>
-      <div className="container mx-auto p-6 space-y-8 pb-mobile-content">
+    <div className={`min-h-screen bg-gradient-to-br from-green-50 to-green-100 overflow-x-hidden ${bottomNavClass}`}>
+      <div className="container mx-auto max-w-screen-md px-4 sm:px-5 py-4 sm:py-6 space-y-6 sm:space-y-8 pb-mobile-content">
         {/* Welcome Header */}
         <div className="text-center py-8">
           <h1 className="text-4xl font-bold text-green-800 mb-2">
-            My Dashboard
+            {t('mydashboard_title') || 'My Dashboard'}
           </h1>
           <p className="text-lg text-green-600">
             {user?.role === 'farmer' && 'Track your harvests, earnings, and sales performance'}
@@ -432,7 +434,7 @@ const MyDashboard = () => {
         <div className="flex justify-center">
           <Badge variant="outline" className="bg-white border-green-300 text-green-700 px-4 py-2 text-sm">
             <MapPin className="h-4 w-4 mr-2" />
-            <span>{user?.location?.city || 'Location not set'}</span>
+            <span>{user?.location?.city || (t('location_not_set') || 'Location not set')}</span>
           </Badge>
         </div>
 

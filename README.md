@@ -1,192 +1,102 @@
-# MarkIt: Fisherfolk and Farmer Price Guarantee App
+# MarkIt
 
-A comprehensive marketplace platform that connects farmers and fisherfolk directly with buyers, ensuring fair prices and eliminating middleman exploitation.
+Direct marketplace connecting farmers and fisherfolk with buyers. The current MVP lets producers post harvests and buyers browse listings, with role-based access, Firebase auth, and PWA/mobile builds. A price‑guarantee and bidding flow is planned and partially scaffolded but not yet fully live.
 
-## 🌾 Overview
+## 🌾 What’s in this app today
 
-MarkIt is an international platform designed to revolutionize agricultural trading by providing a direct connection between producers (farmers and fisherfolk) and buyers (restaurants, cooperatives, schools). The app features a unique price guarantee system that ensures fair compensation for agricultural producers.
+- **Auth and roles**: Email/password auth with roles `farmer`, `fisherman`, `buyer`, and `admin` (see `src/contexts/AuthContext.tsx`).
+- **Harvest CRUD**:
+  - Create harvests with details: category, quantity, grade/freshness, certifications, base price, dates, location, delivery options (see `src/pages/CreateHarvest.tsx`).
+  - Edit or delete existing harvests (see `src/pages/EditHarvest.tsx`).
+  - Data is stored in Firestore in a `harvests` collection.
+- **Marketplace browsing**: Buyers can filter and view harvest listings (see `src/pages/MarketplacePage.tsx` and dashboard routes in `src/App.tsx`).
+- **Role protection**: Routes gated by allowed roles via `RoleProtectedRoute`.
+- **PWA + updates**: Service worker registration with update banners/notifications (`src/components/UpdateNotification.tsx`, `src/services/updateService.ts`).
+- **Mobile builds**: Capacitor Android/iOS projects included. CodePush hooks exist for OTA updates.
 
-## ✨ Key Features
+## 🧭 What’s planned or partial
 
-### For Farmers & Fisherfolk
-- **Harvest Posting**: Create detailed listings for your agricultural products
-- **Quality Documentation**: Specify grade, freshness, certifications, and organic status
-- **Price Guarantee**: Set minimum prices with bidding system for fair compensation
-- **Direct Communication**: Connect directly with buyers without middlemen
-- **Location Services**: Specify pickup and delivery options
+- **Bidding and price guarantee**: UI hooks and navigation exist (e.g., “Place Bid” buttons), but the full bid placement, acceptance, and settlement flow is not finished.
+- **Transactions and payments**: Data types exist; no payment gateway is integrated yet.
+- **Internationalization**: `LanguageContext` exists; full i18n and multi‑currency display are not complete.
 
-### For Buyers
-- **Browse Harvests**: Discover fresh products from local farmers and fisherfolk
-- **Bidding System**: Place competitive bids on available harvests
-- **Quality Assurance**: Access detailed quality information and certifications
-- **Fair Pricing**: Transparent pricing without hidden markups
-- **Direct Sourcing**: Build relationships with producers
+## 🛠️ Tech stack
 
-### General Features
-- **User Roles**: Farmers, Fishermen, Buyers, and Admin roles
-- **Real-time Bidding**: Live bidding system with notifications
-- **Price Calculator**: Tools for fair price determination
-- **Mobile Responsive**: Optimized for mobile and desktop use
-- **International Support**: Multi-country phone number formatting
+- React 18 + TypeScript + Vite
+- Tailwind CSS + Radix UI + shadcn components
+- Firebase: Auth, Firestore, (Storage optional for media)
+- React Router, Context API; Framer Motion; Lucide icons
+- PWA via service worker; Capacitor for mobile; optional CodePush
 
-## 🚀 Technology Stack
-
-- **Frontend**: React 18, TypeScript, Vite
-- **UI Framework**: Tailwind CSS, Radix UI
-- **Backend**: Firebase (Authentication, Firestore, Storage)
-- **State Management**: React Context API
-- **Routing**: React Router DOM
-- **Animations**: Framer Motion
-- **Icons**: Lucide React
-- **PWA**: Service Worker, Offline Support
-
-## 📱 User Interface
-
-- **Rich Green Theme**: Agricultural-inspired color scheme
-- **Instagram-style Navigation**: Modern sidebar with user profile
-- **Mobile-first Design**: Responsive across all devices
-- **Intuitive Forms**: Streamlined harvest posting and bidding
-- **Real-time Updates**: Live notifications and status updates
-
-## 🏗️ Project Structure
+## 🏗️ Project structure (high level)
 
 ```
 src/
-├── components/          # Reusable UI components
-├── contexts/           # React Context providers
-├── hooks/              # Custom React hooks
-├── lib/                # Utility libraries and Firebase config
-├── pages/              # Application pages
-├── services/           # API and service layer
-├── types/              # TypeScript type definitions
-└── utils/              # Helper functions
+├── components/      # Reusable UI (includes update banners/notifications)
+├── contexts/        # Auth, language, drafts
+├── lib/             # Firebase config and utilities
+├── pages/           # Auth, Dashboard, Marketplace, Create/Edit Harvest, etc.
+├── services/        # Update service and app services
+├── types/           # TypeScript models (Harvest, Transaction, etc.)
+└── utils/           # Helpers
 ```
 
-## 🚀 Getting Started
+## 🚀 Getting started
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- Firebase project setup
+- Node.js 18+
+- Firebase project (Auth + Firestore enabled)
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/kzyarou/MarkIt.git
-   cd MarkIt
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Firebase**
-   - Create a Firebase project
-   - Enable Authentication and Firestore
-   - Update `src/lib/firebase.ts` with your config
-
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Build for production**
-   ```bash
-   npm run build
-   ```
-
-## 🔧 Configuration
-
-### Firebase Setup
-1. Create a new Firebase project
-2. Enable Authentication (Email/Password, Google)
-3. Create Firestore database
-4. Update the configuration in `src/lib/firebase.ts`
-
-### Environment Variables
-Create a `.env.local` file:
+### Install and run
+1) Install deps
+```bash
+npm install
+```
+2) Configure Firebase in `src/lib/firebase.ts` and add env vars (create `.env.local`):
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
 VITE_FIREBASE_PROJECT_ID=your_project_id
 ```
+3) Start dev server
+```bash
+npm run dev
+```
+4) Build web (PWA)
+```bash
+npm run build:pwa
+```
 
-## 📊 Data Models
+### Mobile (Capacitor)
+- Sync web build into native projects:
+```bash
+npm run build:mobile
+```
+- Open platforms:
+```bash
+npm run open:android
+npm run open:ios
+```
+- Android signed build (requires gradle setup):
+```bash
+npm run build:android:signed
+```
 
-### User
-- Profile information, role, location, business details
-- Verification status and rating system
+## 🔄 Updates
+- PWA auto‑updates via service worker; users may see an in‑app update prompt.
+- Optional OTA (CodePush) scaffolding exists; add deployment keys in `capacitor.config.ts` if you enable it.
 
-### Harvest
-- Product details, quantity, quality specifications
-- Pricing, bidding, and location information
-
-### Bid
-- Bidder information, amount, timestamp
-- Status and acceptance tracking
-
-### Transaction
-- Payment processing, delivery coordination
-- Completion and review tracking
-
-## 🌍 International Features
-
-- **Multi-language Support**: Ready for internationalization
-- **Phone Number Formatting**: International phone number validation
-- **Currency Support**: Multi-currency price display
-- **Regional Settings**: Location-based features
-
-## 🔒 Security Features
-
-- **Role-based Access Control**: Secure user permissions
-- **Data Validation**: Client and server-side validation
-- **Secure Authentication**: Firebase Auth integration
-- **Privacy Protection**: User data encryption
-
-## 📱 PWA Features
-
-- **Offline Support**: Works without internet connection
-- **Installable**: Add to home screen
-- **Push Notifications**: Real-time updates
-- **Background Sync**: Data synchronization
+## ⚠️ Known limitations (MVP)
+- Bidding/price‑guarantee flow is not fully implemented.
+- No payment gateway yet; transaction types are present but non‑functional.
+- Some labels/configs may still use earlier cache naming.
 
 ## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+PRs welcome. Please open an issue describing the change before large contributions.
 
 ## 📄 License
+MIT (see `LICENSE` if present).
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+—
 
-## 🙏 Acknowledgments
-
-- Firebase for backend services
-- React community for excellent libraries
-- Agricultural communities for inspiration
-- Open source contributors
-
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Contact: [your-email@example.com]
-- Documentation: [Link to docs]
-
-## 🔮 Future Roadmap
-
-- [ ] Mobile app (React Native)
-- [ ] Advanced analytics dashboard
-- [ ] Payment gateway integration
-- [ ] Multi-language support
-- [ ] AI-powered price recommendations
-- [ ] Blockchain integration for transparency
-
----
-
-**MarkIt** - Empowering farmers and fisherfolk with fair prices and direct market access. 🌾🐟
+MarkIt helps producers reach buyers directly with clear, fair listings. 🌾🐟

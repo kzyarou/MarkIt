@@ -4,39 +4,28 @@ import { MapPin, Menu, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function MobileHeader() {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t } = useLanguage();
 
   // Base menu items for all users
   const menuItems = [
-    { label: 'Profile', href: '/profile' },
-    { label: 'Settings', href: '/settings' },
+    { label: t('nav_notifications') || 'Notifications', href: '/notifications' },
+    { label: t('menu_farmers_directory') || 'Farmers Directory', href: '/farmers' },
+    { label: t('menu_price_guarantee') || 'Price Guarantee', href: '/price-guarantee' },
+    { label: 'FAQ', href: '/faq' },
+    { label: t('menu_help') || 'Help', href: '/help' },
+    { label: t('privacy_policy') || 'Privacy Policy', href: '/privacy' },
+    { label: t('terms_of_service') || 'Terms of Service', href: '/terms' },
+    { label: t('nav_profile') || 'Profile', href: '/profile' },
+    { label: t('settings') || 'Settings', href: '/settings' },
   ];
 
   // Add role-specific items
-  if (user?.role === 'farmer' || user?.role === 'fisherman') {
-    // Seller (farmer/fisherman) menu items
-    menuItems.unshift(
-      { label: 'Notifications', href: '/notifications' },
-      { label: 'Search', href: '/search' }
-    );
-  } else if (user?.role === 'buyer') {
-    // Buyer menu items
-    menuItems.unshift(
-      { label: 'Notifications', href: '/notifications' },
-      { label: 'Search', href: '/search' }
-    );
-  } else if (user?.role === 'student') {
-    // Student menu items
-    menuItems.unshift(
-      { label: 'Notifications', href: '/notifications' },
-      { label: 'Search', href: '/search' },
-      { label: 'Create Harvest', href: '/create-harvest' }
-    );
-    menuItems.push({ label: 'Calculator', href: '/calculator' });
-  }
+  // Role-specific additions can be added here if needed
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-green-200">
@@ -48,7 +37,7 @@ export function MobileHeader() {
             alt="MarkIt" 
             className="h-6 w-6 text-green-600"
           />
-          <h1 className="text-lg font-bold text-green-700">MarkIt</h1>
+          <h1 className="text-lg font-bold text-green-700">{t('app_name')}</h1>
         </div>
 
         {/* Right side with Location Badge and Menu */}
@@ -71,7 +60,7 @@ export function MobileHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <SheetHeader>
-                <SheetTitle className="text-left">Menu</SheetTitle>
+                <SheetTitle className="text-left">{t('menu') || 'Menu'}</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-2">
                 {menuItems.map((item) => (

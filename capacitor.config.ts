@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.kzyarou.educhub',
+  appId: 'com.markit.app',
   appName: 'MarkIt',
   webDir: 'dist',
   server: {

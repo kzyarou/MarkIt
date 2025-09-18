@@ -4,13 +4,16 @@ import App from './App.tsx'
 import './index.css'
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DraftsProvider } from '@/contexts/DraftsContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 createRoot(document.getElementById("root")!).render(
-  <AuthProvider>
-    <DraftsProvider>
-      <App />
-    </DraftsProvider>
-  </AuthProvider>
+  <LanguageProvider>
+    <AuthProvider>
+      <DraftsProvider>
+        <App />
+      </DraftsProvider>
+    </AuthProvider>
+  </LanguageProvider>
 );
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

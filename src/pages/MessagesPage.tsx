@@ -29,6 +29,7 @@ import {
   serverTimestamp,
   updateDoc
 } from 'firebase/firestore';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Message {
   id: string;
@@ -55,6 +56,7 @@ interface Conversation {
 
 const MessagesPage = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -323,7 +325,7 @@ const MessagesPage = () => {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (minutes < 1) return 'Just now';
+    if (minutes < 1) return t('just_now') || 'Just now';
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
@@ -339,16 +341,16 @@ const MessagesPage = () => {
           <Card className="h-full">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg sm:text-xl">Messages</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">{t('messages_title') || 'Messages'}</CardTitle>
                 <Button size="sm" variant="outline" className="hidden sm:flex">
                   <Plus className="h-4 w-4 mr-2" />
-                  New Chat
+                  {t('messages_new_chat') || 'New Chat'}
                 </Button>
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder={t('messages_search_ph') || 'Search conversations...'}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -359,13 +361,13 @@ const MessagesPage = () => {
               {filteredConversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                   <MessageCircle className="h-12 w-12 mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">No conversations yet</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('messages_empty_title') || 'No conversations yet'}</h3>
                   <p className="text-sm text-center mb-4">
-                    Start a conversation with farmers or buyers about their harvests
+                    {t('messages_empty_desc') || 'Start a conversation with farmers or buyers about their harvests'}
                   </p>
                   <Button size="sm" variant="outline">
                     <Plus className="h-4 w-4 mr-2" />
-                    Start New Chat
+                    {t('messages_start_chat') || 'Start New Chat'}
                   </Button>
                 </div>
               ) : (
@@ -466,7 +468,7 @@ const MessagesPage = () => {
                       className="lg:hidden"
                       onClick={() => setSelectedConversation(null)}
                     >
-                      ← Back
+                      ← {t('back') || 'Back'}
                     </Button>
                     {(() => {
                       const otherParticipantId = selectedConv?.participants.find(id => id !== user?.id);
@@ -483,7 +485,7 @@ const MessagesPage = () => {
                           </Avatar>
                           <div>
                             <h3 className="font-medium">{participantName}</h3>
-                            <p className="text-sm text-gray-500">Online</p>
+                            <p className="text-sm text-gray-500">{t('online') || 'Online'}</p>
                           </div>
                         </>
                       );
@@ -503,7 +505,7 @@ const MessagesPage = () => {
                     {messages.length === 0 ? (
                       <div className="text-center text-gray-500 py-8">
                         <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No messages yet. Start a conversation!</p>
+                        <p>{t('messages_none') || 'No messages yet. Start a conversation!'}</p>
                       </div>
                     ) : (
                       messages.map((message, index) => {
@@ -579,7 +581,7 @@ const MessagesPage = () => {
                     <Paperclip className="h-4 w-4" />
                   </Button>
                   <Input
-                    placeholder="Type a message..."
+                    placeholder={t('messages_input_ph') || 'Type a message...'}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -604,12 +606,12 @@ const MessagesPage = () => {
             <Card className="h-full flex items-center justify-center">
               <div className="text-center text-gray-500">
                 <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">Welcome to Messages</h3>
-                <p className="mb-4">Start conversations with farmers and buyers about harvests</p>
+                <h3 className="text-lg font-medium mb-2">{t('messages_welcome') || 'Welcome to Messages'}</h3>
+                <p className="mb-4">{t('messages_welcome_desc') || 'Start conversations with farmers and buyers about harvests'}</p>
                 <div className="space-y-2 text-sm text-gray-400">
-                  <p>• Contact farmers about their products</p>
-                  <p>• Negotiate prices and delivery</p>
-                  <p>• Ask questions about harvest quality</p>
+                  <p>• {t('messages_tip_contact') || 'Contact farmers about their products'}</p>
+                  <p>• {t('messages_tip_negotiate') || 'Negotiate prices and delivery'}</p>
+                  <p>• {t('messages_tip_quality') || 'Ask questions about harvest quality'}</p>
                 </div>
               </div>
             </Card>

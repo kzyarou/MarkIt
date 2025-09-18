@@ -1,4 +1,4 @@
-package com.kzyarou.educhub;
+package com.markit.app;
 
 import com.getcapacitor.BridgeActivity;
 

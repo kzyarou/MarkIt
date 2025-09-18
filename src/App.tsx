@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
@@ -35,6 +35,7 @@ import FAQPage from './pages/FAQPage';
 import DataPrivacyPage from './pages/DataPrivacyPage';
 import TermsPage from './pages/TermsPage';
 import HelpPage from './pages/HelpPage';
+import FarmersDirectoryPage from './pages/FarmersDirectoryPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PriceCalculatorPage from './pages/PriceCalculatorPage';
@@ -74,9 +75,22 @@ function AppRoutes() {
   const { user, isLoading } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   // Presence updates for logged-in users
   usePresence();
+
+  // Android hardware back button handling (web fallback): use browser history
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Fallback for testing: Alt+Left simulates back
+      if ((e.altKey && e.key === 'ArrowLeft') && window.history.length > 1 && !['/auth'].includes(location.pathname)) {
+        navigate(-1);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [location.pathname, navigate]);
 
   if (isLoading) {
     return (
@@ -124,7 +138,11 @@ function AppRoutes() {
             <Navigate to="/admin" replace />
           ) : (
             <RoleProtectedRoute allowedRoles={['farmer', 'fisherman']}>
-              <CreateHarvest />
+              {(user?.membershipStatus?.tier === 'temporary') ? (
+                <Navigate to="/profile" replace />
+              ) : (
+                <CreateHarvest />
+              )}
             </RoleProtectedRoute>
           )}
         </ProtectedRoute>
@@ -217,6 +235,11 @@ function AppRoutes() {
       <Route path="/privacy" element={<DataPrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/help" element={<HelpPage />} />
+      <Route path="/farmers" element={
+        <ProtectedRoute>
+          <FarmersDirectoryPage />
+        </ProtectedRoute>
+      } />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       <Route path="*" element={<NotFound />} />

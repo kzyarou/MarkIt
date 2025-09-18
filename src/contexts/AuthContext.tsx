@@ -32,7 +32,12 @@ interface User {
   verificationStatus?: {
     isVerified: boolean;
     verifiedAt?: string;
-    documents: string[];
+    documents: { type: 'BIR' | 'BarangayClearance'; url: string; uploadedAt: string }[];
+  };
+  membershipStatus?: {
+    tier: 'lifetime' | 'temporary' | 'none';
+    documentType?: 'BIR' | 'BarangayClearance';
+    expiresAt?: string;
   };
   rating?: {
     average: number;
@@ -68,6 +73,8 @@ interface AuthContextType {
       licenseNumber?: string;
       description?: string;
     };
+    verificationStatus?: User['verificationStatus'];
+    membershipStatus?: User['membershipStatus'];
   }) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -168,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isVerified: false,
           documents: []
         },
+        membershipStatus: (userProfile as any)?.membershipStatus || { tier: 'none' },
         rating: (userProfile as any)?.rating || {
           average: 0,
           totalReviews: 0
@@ -250,9 +258,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: userData.role,
         phoneNumber: userData.phoneNumber || '',
         verificationStatus: {
-          isVerified: false,
-          documents: []
+          isVerified: Boolean(userData.verificationStatus?.isVerified) || false,
+          documents: userData.verificationStatus?.documents || []
         },
+        membershipStatus: userData.membershipStatus || { tier: 'none' },
         rating: {
           average: 0,
           totalReviews: 0
@@ -278,10 +287,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: userData.role,
         profileImage: '',
         phoneNumber: userData.phoneNumber || '',
-        verificationStatus: {
+        verificationStatus: userData.verificationStatus || {
           isVerified: false,
           documents: []
         },
+        membershipStatus: userData.membershipStatus || { tier: 'none' },
         rating: {
           average: 0,
           totalReviews: 0

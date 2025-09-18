@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Hash, Phone, User, Edit2, Facebook, Calendar, BadgeCheck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mail, Hash, Phone, User, Edit2, Facebook, Calendar, BadgeCheck, Upload } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface ProfileViewProps {
   profile: any;
@@ -25,6 +27,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   sectionsLoading = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [editProfile, setEditProfile] = useState({
     name: profile?.name || '',
     bio: profile?.bio || '',
@@ -91,6 +95,30 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
+  const handleAvatarClick = () => {
+    if (!editable) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingAvatar(true);
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `users/${profile?.id || 'unknown'}/profile/${Date.now()}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      if (onSave) {
+        await onSave({ profileImage: url });
+      }
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   // UI
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8 text-foreground">
@@ -98,10 +126,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Avatar className="h-14 w-14">
-                <AvatarImage src={profile?.avatarUrl || ''} alt={profile?.name || ''} />
-                <AvatarFallback className={isAdmin ? 'bg-red-600 text-white font-bold' : ''}>{isAdmin ? 'DEV' : (profile?.name || '?').slice(0,2).toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-14 w-14">
+                  <AvatarImage src={profile?.profileImage || ''} alt={profile?.name || ''} />
+                  <AvatarFallback className={isAdmin ? 'bg-red-600 text-white font-bold' : ''}>{isAdmin ? 'DEV' : (profile?.name || '?').slice(0,2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                {editable && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute -bottom-2 -right-2 h-7 w-7"
+                    onClick={handleAvatarClick}
+                    disabled={uploadingAvatar}
+                    title="Upload profile photo"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarFileChange}
+                />
+              </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className={`text-2xl font-bold ${isAdmin ? 'text-red-700 dark:text-red-300' : ''}`}>{profile?.name || '—'}</h2>
@@ -215,6 +264,41 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </CardContent>
           </Card>
         )}
+
+        {/* Documents & Verification */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-green-600" /> Documents & Verification</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                Membership: <span className="font-medium capitalize">{profile?.membershipStatus?.tier || 'none'}</span>
+                {profile?.membershipStatus?.documentType && (
+                  <span> • via {profile.membershipStatus.documentType}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(profile?.verificationStatus?.documents || []).map((doc: any, idx: number) => (
+                  <a key={idx} href={doc.url} target="_blank" rel="noopener noreferrer" className="p-3 border rounded hover:bg-accent text-sm truncate">
+                    <span className="font-medium">{doc.type}</span>
+                    <span className="ml-2 text-muted-foreground">{new Date(doc.uploadedAt).toLocaleString()}</span>
+                  </a>
+                ))}
+                {(!profile?.verificationStatus?.documents || profile.verificationStatus.documents.length === 0) && (
+                  <div className="text-sm text-muted-foreground">No documents uploaded yet.</div>
+                )}
+              </div>
+              {editable && (
+                <div className="pt-2">
+                  <Button variant="outline" size="sm" onClick={handleAvatarClick}>
+                    Upload new document via Profile Photo button (BIR or Barangay)
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

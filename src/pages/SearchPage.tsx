@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import MarkItHeader from '@/components/MarkItHeader';
 import { useBottomNav } from '@/hooks/use-mobile';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MockUser {
   id: string;
@@ -30,6 +31,7 @@ interface MockUser {
 export default function SearchPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const { bottomNavClass } = useBottomNav();
   const [searchResults, setSearchResults] = useState<MockUser[]>([]);
@@ -146,7 +148,7 @@ export default function SearchPage() {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-[#0F1A2B] text-white' : 'bg-background'} ${bottomNavClass}`}>
-      <MarkItHeader subtitle="Search" />
+      <MarkItHeader subtitle={t('search') || 'Search'} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-mobile-content">
         {/* Search Form */}
@@ -154,14 +156,14 @@ export default function SearchPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="w-5 h-5" />
-              Search Users
+              {t('search_users') || 'Search Users'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="flex flex-1 items-center gap-2">
                 <Input
-                  placeholder="Search by name, email, or LRN..."
+                  placeholder={t('search_input_ph') || 'Search by name, email, or LRN...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -172,7 +174,7 @@ export default function SearchPage() {
                     <span
                       tabIndex={0}
                       role="button"
-                      aria-label="Filter"
+                      aria-label={t('filter') || 'Filter'}
                       className="cursor-pointer flex items-center justify-center w-10 h-10 rounded hover:bg-accent transition"
                     >
                       <Filter className="w-5 h-5" />
@@ -183,26 +185,26 @@ export default function SearchPage() {
                       onSelect={() => handleShowAll('all')}
                       className={roleFilter === 'all' ? 'font-bold bg-accent' : ''}
                     >
-                      All
+                      {t('all') || 'All'}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={() => handleShowAll('student')}
                       className={roleFilter === 'student' ? 'font-bold bg-accent' : ''}
                     >
-                      Students
+                      {t('students') || 'Students'}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={() => handleShowAll('teacher')}
                       className={roleFilter === 'teacher' ? 'font-bold bg-accent' : ''}
                     >
-                      Teachers
+                      {t('teachers') || 'Teachers'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <span
                   tabIndex={0}
                   role="button"
-                  aria-label="Search"
+                  aria-label={t('search') || 'Search'}
                   className={`cursor-pointer flex items-center justify-center w-10 h-10 rounded hover:bg-accent transition ${isSearching ? 'opacity-50 pointer-events-none' : ''}`}
                   onClick={() => !isSearching && handleSearch()}
                   onKeyPress={e => { if (e.key === 'Enter' && !isSearching) handleSearch(); }}
@@ -222,7 +224,7 @@ export default function SearchPage() {
         {searchResults.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Search Results ({searchResults.length})</CardTitle>
+              <CardTitle>{(t('search_results') || 'Search Results')} ({searchResults.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -257,7 +259,7 @@ export default function SearchPage() {
                               </div>
                             )}
                             <div className="mt-3 flex flex-col sm:flex-row gap-2">
-                              <a href={`/profile/${user.id}`} className={`block w-full sm:inline-block sm:w-auto px-3 py-2 text-sm rounded transition text-center ${isAdmin ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>View Full Profile</a>
+                              <a href={`/profile/${user.id}`} className={`block w-full sm:inline-block sm:w-auto px-3 py-2 text-sm rounded transition text-center ${isAdmin ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>{t('view_full_profile') || 'View Full Profile'}</a>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -265,7 +267,7 @@ export default function SearchPage() {
                                 className="w-full sm:w-auto"
                               >
                                 <MessageCircle className="h-4 w-4 mr-2" />
-                                Message
+                                {t('message') || 'Message'}
                               </Button>
                             </div>
                           </div>
@@ -283,8 +285,8 @@ export default function SearchPage() {
           <Card>
             <CardContent className="text-center py-12">
               <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No results found</h3>
-              <p className="text-muted-foreground">Try searching with different keywords.</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t('no_results') || 'No results found'}</h3>
+              <p className="text-muted-foreground">{t('try_different_keywords') || 'Try searching with different keywords.'}</p>
             </CardContent>
           </Card>
         )}

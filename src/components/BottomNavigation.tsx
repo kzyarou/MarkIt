@@ -1,60 +1,26 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, FileText, Search, User, Settings, Calculator, MessageCircle, Plus, Bell } from 'lucide-react';
+import { Users, FileText, Search, MessageCircle, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const navItems = [
-  { id: 'homepage', icon: Users, path: '/' },
-  { id: 'mydashboard', icon: FileText, path: '/mydashboard' },
-  { id: 'search', icon: Search, path: '/search' },
-  { id: 'profile', icon: User, path: '/profile' },
-  { id: 'settings', icon: Settings, path: '/settings' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useTheme();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
-  // Determine nav items based on user role
-  let navItems = [];
-
-  if (user?.role === 'farmer' || user?.role === 'fisherman') {
-    // Seller (farmer/fisherman) navigation
-    navItems = [
-      { id: 'search', icon: Search, path: '/search' },
-      { id: 'notifications', icon: Bell, path: '/notifications' },
-      { id: 'create', icon: Plus, path: '/create-harvest' },
-      { id: 'profile', icon: User, path: '/profile' },
-      { id: 'settings', icon: Settings, path: '/settings' },
-    ];
-  } else if (user?.role === 'buyer') {
-    // Buyer navigation
-    navItems = [
-      { id: 'search', icon: Search, path: '/search' },
-      { id: 'notifications', icon: Bell, path: '/notifications' },
-      { id: 'profile', icon: User, path: '/profile' },
-      { id: 'settings', icon: Settings, path: '/settings' },
-    ];
-  } else if (user?.role === 'student') {
-    // Student navigation
-    navItems = [
-      { id: 'search', icon: Search, path: '/search' },
-      { id: 'notifications', icon: Bell, path: '/notifications' },
-      { id: 'create', icon: Plus, path: '/create-harvest' },
-      { id: 'calculator', icon: Calculator, path: '/calculator' },
-      { id: 'settings', icon: Settings, path: '/settings' },
-    ];
-  } else if (user?.role === 'admin') {
-    // Admin users: show Admin tab
-    navItems = [
-      { id: 'admin', icon: Settings, path: '/admin' },
-      { id: 'settings', icon: Settings, path: '/settings' },
-    ];
-  }
+  // Fixed bottom nav for mobile: Home, Dashboard, Create, Search, Messages
+  const navItems = [
+    { id: 'homepage', icon: Users, path: '/', label: t('nav_home') || 'Home' },
+    { id: 'mydashboard', icon: FileText, path: '/mydashboard', label: t('nav_mydashboard') || 'My Dashboard' },
+    { id: 'create', icon: Plus, path: '/create-harvest', label: t('nav_create') || 'Create' },
+    { id: 'search', icon: Search, path: '/search', label: t('nav_search') || 'Search' },
+    { id: 'messages', icon: MessageCircle, path: '/messages', label: t('nav_messages') || 'Messages' },
+  ];
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -74,11 +40,7 @@ export function BottomNavigation() {
   const activeColor = isDark ? '#3d4e5e' : '#3b82f6';
   const inactiveColor = isDark ? '#e2e8f0' : '#1f2937';
 
-  const gridCols = navItems.length === 2 ? 'grid-cols-2' : 
-                   navItems.length === 3 ? 'grid-cols-3' : 
-                   navItems.length === 4 ? 'grid-cols-4' : 
-                   navItems.length === 5 ? 'grid-cols-5' : 
-                   navItems.length === 6 ? 'grid-cols-6' : 'grid-cols-4';
+  const gridCols = 'grid-cols-5';
 
   return (
     <motion.nav
@@ -93,13 +55,14 @@ export function BottomNavigation() {
         backfaceVisibility: 'hidden'
       }}
       role="tablist"
-      aria-label="Bottom navigation"
+      aria-label={t('bottom_nav') || 'Bottom navigation'}
     >
       <div
         className="mx-auto w-[calc(100%-24px)] max-w-md rounded-2xl px-2 py-1 backdrop-blur-md mb-2"
         style={{
           background: bgColor,
-          border: `1px solid ${borderColor}`,
+          border: `1px solid ${borderColor}`
+,
           boxShadow: `0 8px 30px ${shadowColor}`
         }}
       >
@@ -116,7 +79,7 @@ export function BottomNavigation() {
                   transition={{ type: 'spring', stiffness: 600, damping: 35 }}
                   role="tab"
                   aria-selected={active}
-                  aria-label={item.id}
+                  aria-label={item.label}
                 >
                   {active && (
                     <motion.div
@@ -141,7 +104,7 @@ export function BottomNavigation() {
                         exit={{ opacity: 0, y: 6 }}
                         transition={{ duration: 0.18 }}
                       >
-                        {item.id.charAt(0).toUpperCase() + item.id.slice(1)}
+                        {item.label}
                       </motion.span>
                     )}
                   </AnimatePresence>

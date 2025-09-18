@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 type NavItem = {
   id: string
@@ -33,33 +34,36 @@ type NavItem = {
 
 function useNavItems() {
   const { user } = useAuth()
+  const { t } = useLanguage()
 
   // Core navigation items (Instagram-style)
   let coreItems: NavItem[] = [
-    { id: "home", label: "Home", icon: Home, path: "/" },
-    { id: "search", label: "Search", icon: Search, path: "/search" },
-    { id: "create", label: "Create", icon: Plus, path: "/create-harvest" },
-    { id: "messages", label: "Messages", icon: MessageCircle, path: "/messages" },
-    { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
-    { id: "profile", label: "Profile", icon: User, path: "/profile" },
+    { id: "home", label: t('nav_home') || "Home", icon: Home, path: "/" },
+    { id: "search", label: t('nav_search') || "Search", icon: Search, path: "/search" },
+    { id: "create", label: t('nav_create') || "Create", icon: Plus, path: "/create-harvest" },
+    { id: "messages", label: t('nav_messages') || "Messages", icon: MessageCircle, path: "/messages" },
+    { id: "notifications", label: t('nav_notifications') || "Notifications", icon: Bell, path: "/notifications" },
+    { id: "profile", label: t('nav_profile') || "Profile", icon: User, path: "/profile" },
   ]
 
   // Add role-specific items
   if (user?.role === "farmer" || user?.role === "fisherman") {
-    coreItems.splice(2, 0, { id: "mydashboard", label: "My Dashboard", icon: FileText, path: "/mydashboard" })
+    coreItems.splice(2, 0, { id: "mydashboard", label: t('nav_mydashboard') || "My Dashboard", icon: FileText, path: "/mydashboard" })
+    coreItems.splice(5, 0, { id: "farmers", label: t('nav_farmers') || "Farmers", icon: Search, path: "/farmers" })
   } else if (user?.role === "buyer") {
     // Buyers don't need dashboard or create - they only have search and messages
     coreItems = [
-      { id: "home", label: "Home", icon: Home, path: "/" },
-      { id: "search", label: "Search", icon: Search, path: "/search" },
-      { id: "messages", label: "Messages", icon: MessageCircle, path: "/messages" },
-      { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
-      { id: "profile", label: "Profile", icon: User, path: "/profile" },
+      { id: "home", label: t('nav_home') || "Home", icon: Home, path: "/" },
+      { id: "search", label: t('nav_search') || "Search", icon: Search, path: "/search" },
+      { id: "messages", label: t('nav_messages') || "Messages", icon: MessageCircle, path: "/messages" },
+      { id: "notifications", label: t('nav_notifications') || "Notifications", icon: Bell, path: "/notifications" },
+      { id: "profile", label: t('nav_profile') || "Profile", icon: User, path: "/profile" },
+      { id: "farmers", label: t('nav_farmers') || "Farmers", icon: Search, path: "/farmers" },
     ]
   } else if (user?.role === "admin") {
     coreItems = [
-      { id: "admin", label: "Admin", icon: Settings, path: "/admin" },
-      { id: "profile", label: "Profile", icon: User, path: "/profile" },
+      { id: "admin", label: t('nav_admin') || "Admin", icon: Settings, path: "/admin" },
+      { id: "profile", label: t('nav_profile') || "Profile", icon: User, path: "/profile" },
     ]
   }
 
@@ -145,6 +149,7 @@ function UserProfile() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useLanguage()
 
   const handleLogout = async () => {
     try {
@@ -188,29 +193,29 @@ function UserProfile() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{user.name}</p>
             <p className="text-xs text-gray-500 truncate">
-              {user.role === 'farmer' ? 'Farmer' : 
-               user.role === 'fisherman' ? 'Fisherman' : 
-               user.role === 'buyer' ? 'Buyer' : 
-               user.role === 'admin' ? 'Admin' : 'User'}
+              {user.role === 'farmer' ? (t('role_farmer') || 'Farmer') : 
+               user.role === 'fisherman' ? (t('role_fisherman') || 'Fisherman') : 
+               user.role === 'buyer' ? (t('role_buyer') || 'Buyer') : 
+               user.role === 'admin' ? (t('role_admin') || 'Admin') : (t('role_user') || 'User')}
             </p>
           </div>
         </motion.button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>Account</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('account') || 'Account'}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate("/profile")}>
           <User className="mr-2 h-4 w-4" />
-          View Profile
+          {t('view_profile') || 'View Profile'}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/settings")}>
           <Settings className="mr-2 h-4 w-4" />
-          Settings
+          {t('settings') || 'Settings'}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
-          Log out
+          {t('sign_out') || 'Log out'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

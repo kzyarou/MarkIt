@@ -8,11 +8,13 @@ import { Dialog as FeedbackDialog, DialogContent as FeedbackDialogContent, Dialo
 import { MessageCircle, Trash2, HelpCircle, FileText, LogOut, ShieldCheck } from 'lucide-react';
 import { listDrafts, deleteDraft, DraftType } from '@/utils/localDrafts';
 import MarkItHeader from '@/components/MarkItHeader';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useBottomNav } from '@/hooks/use-mobile';
 
 
 const SettingsPage = () => {
   const { logout, deleteUserProfileWithPasswordOrGoogle, isLoading, user } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const { bottomNavClass } = useBottomNav();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -62,8 +64,26 @@ const SettingsPage = () => {
 
   return (
     <div className={`min-h-screen bg-background ${bottomNavClass}`}>
-      <MarkItHeader subtitle="Settings" />
+      <MarkItHeader subtitle={t('settings')} />
       <main className="max-w-md mx-auto px-2 py-4 pb-mobile-content">
+        {/* Language */}
+        <div className="bg-card rounded-xl shadow p-4 mb-6">
+          <div className="text-xs font-semibold text-muted-foreground mb-2">{t('general')}</div>
+          <div className="space-y-2">
+            <div className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted transition">
+              <span className="font-medium text-foreground flex-1 text-left">{t('language')}</span>
+              <select
+                className="bg-background border rounded px-2 py-1 text-sm"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+              >
+                <option value="en">{t('language_english')}</option>
+                <option value="war">{t('language_waray')}</option>
+                <option value="tl">Tagalog</option>
+              </select>
+            </div>
+          </div>
+        </div>
         {user?.role === 'admin' && (
           <div className="bg-card rounded-xl shadow p-4 mb-6">
             <div className="text-xs font-semibold text-muted-foreground mb-2">Admin</div>
@@ -81,54 +101,54 @@ const SettingsPage = () => {
         )}
         {/* General Section */}
         <div className="bg-card rounded-xl shadow p-4 mb-6">
-          <div className="text-xs font-semibold text-muted-foreground mb-2">General</div>
+          <div className="text-xs font-semibold text-muted-foreground mb-2">{t('general')}</div>
           <div className="space-y-2">
             <button onClick={() => setShowFeedback(true)} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition mb-1">
               <MessageCircle className="w-5 h-5 text-primary" />
               <div className="flex flex-col items-start text-left">
-                <span className="font-medium text-foreground">Leave feedback</span>
-                <span className="text-xs text-muted-foreground">Let us know how you like the app!</span>
+                <span className="font-medium text-foreground">{t('leave_feedback')}</span>
+                <span className="text-xs text-muted-foreground">{t('leave_feedback_sub')}</span>
               </div>
             </button>
             <button onClick={() => setShowClearCache(true)} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition">
               <Trash2 className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground flex-1 text-left">Clear cache</span>
+              <span className="font-medium text-foreground flex-1 text-left">{t('clear_cache')}</span>
             </button>
             <button onClick={() => navigate('/help')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition">
               <HelpCircle className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground flex-1 text-left">Help & Support</span>
+              <span className="font-medium text-foreground flex-1 text-left">{t('help_support')}</span>
             </button>
           </div>
         </div>
         {/* Legal Section */}
         <div className="bg-card rounded-xl shadow p-4 mb-6">
-          <div className="text-xs font-semibold text-muted-foreground mb-2">Legal</div>
+          <div className="text-xs font-semibold text-muted-foreground mb-2">{t('legal')}</div>
           <div className="space-y-2">
             <button onClick={() => navigate('/privacy-policy')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition">
               <ShieldCheck className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground flex-1 text-left">Privacy Policy</span>
+              <span className="font-medium text-foreground flex-1 text-left">{t('privacy_policy')}</span>
             </button>
             <button onClick={() => navigate('/terms-of-service')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition">
               <FileText className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground flex-1 text-left">Terms of Service</span>
+              <span className="font-medium text-foreground flex-1 text-left">{t('terms_of_service')}</span>
             </button>
           </div>
         </div>
         {/* Sign out */}
         <button onClick={logout} className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition mb-2">
           <LogOut className="w-5 h-5 text-destructive" />
-          <span className="font-medium text-destructive flex-1 text-left">Sign out</span>
+          <span className="font-medium text-destructive flex-1 text-left">{t('sign_out')}</span>
         </button>
         {/* DANGER Section */}
         <div className="bg-card rounded-xl shadow p-4 mb-6 border border-destructive">
-          <div className="text-xs font-semibold text-destructive mb-2 uppercase tracking-wider">DANGER</div>
+          <div className="text-xs font-semibold text-destructive mb-2 uppercase tracking-wider">{t('danger')}</div>
           <div className="space-y-2">
             <button
               onClick={() => setShowConfirm(true)}
               className="w-full flex items-center gap-3 p-3 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition border border-destructive text-destructive font-semibold"
             >
               <Trash2 className="w-5 h-5" />
-              <span className="flex-1 text-left">Delete Account</span>
+              <span className="flex-1 text-left">{t('delete_account')}</span>
             </button>
             <div className="text-xs text-muted-foreground">
               <b>Warning:</b> Deleting your account is permanent and cannot be undone.
@@ -182,7 +202,7 @@ const SettingsPage = () => {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => setShowConfirm(false)} variant="outline" disabled={deleting}>Cancel</Button>
+              <Button onClick={() => setShowConfirm(false)} variant="outline" disabled={deleting}>{t('cancel')}</Button>
               <Button onClick={handleDelete} variant="destructive" disabled={deleting || (providerId !== 'google.com' && !password)}>
                 {deleting ? 'Deleting...' : providerId === 'google.com' ? 'Re-authenticate with Google & Delete' : 'Delete'}
               </Button>
@@ -245,8 +265,8 @@ const SettingsPage = () => {
                 placeholder="Type your feedback..."
               />
               <FeedbackDialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowFeedback(false)} disabled={sendingFeedback}>Cancel</Button>
-                <Button type="submit" disabled={sendingFeedback}>{sendingFeedback ? 'Sending...' : 'Send'}</Button>
+                <Button type="button" variant="outline" onClick={() => setShowFeedback(false)} disabled={sendingFeedback}>{t('cancel')}</Button>
+                <Button type="submit" disabled={sendingFeedback}>{sendingFeedback ? t('sending') : t('send')}</Button>
               </FeedbackDialogFooter>
             </form>
           </FeedbackDialogContent>

@@ -8,11 +8,11 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.kzyarou.educhub"
+    namespace "com.markit.app"
     compileSdk rootProject.ext.compileSdkVersion
     
     defaultConfig {
-        applicationId "com.kzyarou.educhub"
+        applicationId "com.markit.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 5
