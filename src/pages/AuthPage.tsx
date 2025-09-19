@@ -587,7 +587,7 @@ export default function AuthPage() {
             </Button>
             
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Join MarkIt as a Seller
+              Join MarkIt
             </h1>
             <p className="text-muted-foreground">
               Complete your registration to start selling at guaranteed fair prices
@@ -766,8 +766,8 @@ export default function AuthPage() {
                         <SelectValue placeholder="Select your account type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="consumer">Consumer (Buyer)</SelectItem>
-                        <SelectItem value="seller">Seller (Farmer/Fisher)</SelectItem>
+                        <SelectItem value="consumer">Consumer</SelectItem>
+                        <SelectItem value="seller">Producer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

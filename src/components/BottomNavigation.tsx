@@ -13,11 +13,14 @@ export function BottomNavigation() {
   const { user } = useAuth();
   const { t } = useLanguage();
 
-  // Fixed bottom nav for mobile: Home, Dashboard, Create, Search, Messages
+  // Fixed bottom nav for mobile: Home, Dashboard, [Create if producer], Search, Messages
   const navItems = [
     { id: 'homepage', icon: Users, path: '/', label: t('nav_home') || 'Home' },
     { id: 'mydashboard', icon: FileText, path: '/mydashboard', label: t('nav_mydashboard') || 'My Dashboard' },
-    { id: 'create', icon: Plus, path: '/create-harvest', label: t('nav_create') || 'Create' },
+    // Only show create for producers
+    ...(user?.role === 'producer' ? [
+      { id: 'create', icon: Plus, path: '/create-harvest', label: t('nav_create') || 'Create' },
+    ] : []),
     { id: 'search', icon: Search, path: '/search', label: t('nav_search') || 'Search' },
     { id: 'messages', icon: MessageCircle, path: '/messages', label: t('nav_messages') || 'Messages' },
   ];
@@ -40,7 +43,7 @@ export function BottomNavigation() {
   const activeColor = isDark ? '#3d4e5e' : '#3b82f6';
   const inactiveColor = isDark ? '#e2e8f0' : '#1f2937';
 
-  const gridCols = 'grid-cols-5';
+  const gridCols = user?.role === 'producer' ? 'grid-cols-5' : 'grid-cols-4';
 
   return (
     <motion.nav

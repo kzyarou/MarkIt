@@ -8,7 +8,8 @@ import {
   getDoc,
   serverTimestamp,
   orderBy,
-  limit
+  limit,
+  updateDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -113,15 +114,20 @@ export class ConversationService {
       const q = query(
         conversationsRef,
         where('participants', 'array-contains', userId),
-        orderBy('lastActivity', 'desc'),
         limit(50)
       );
 
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const convs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Conversation));
+      convs.sort((a, b) => {
+        const ta = (a.lastActivity && (a.lastActivity as any).toDate) ? (a.lastActivity as any).toDate().getTime() : 0;
+        const tb = (b.lastActivity && (b.lastActivity as any).toDate) ? (b.lastActivity as any).toDate().getTime() : 0;
+        return tb - ta;
+      });
+      return convs;
     } catch (error) {
       console.error('Error getting user conversations:', error);
       return [];
@@ -192,7 +198,7 @@ export class ConversationService {
         }
       }
 
-      await conversationRef.update(conversationUpdate);
+      await updateDoc(conversationRef, conversationUpdate);
     } catch (error) {
       console.error('Error sending message:', error);
       throw new Error('Failed to send message');
@@ -205,7 +211,7 @@ export class ConversationService {
   static async markMessagesAsRead(conversationId: string, userId: string): Promise<void> {
     try {
       const conversationRef = doc(db, 'conversations', conversationId);
-      await conversationRef.update({
+      await updateDoc(conversationRef, {
         [`unreadCount.${userId}`]: 0
       });
     } catch (error) {

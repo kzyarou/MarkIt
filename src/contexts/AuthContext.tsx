@@ -10,7 +10,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'farmer' | 'fisherman' | 'buyer' | 'admin';
+  role: 'producer' | 'consumer' | 'admin';
   profileImage?: string;
   phoneNumber?: string;
   location?: {
@@ -48,6 +48,16 @@ interface User {
   updatedAt?: string;
 }
 
+// Map legacy roles to new roles
+function normalizeRole(rawRole: string | undefined | null): 'producer' | 'consumer' | 'admin' {
+  if (!rawRole) return 'consumer';
+  const r = String(rawRole).toLowerCase();
+  if (r === 'admin') return 'admin';
+  if (r === 'farmer' || r === 'fisherman' || r === 'producer') return 'producer';
+  if (r === 'buyer' || r === 'consumer') return 'consumer';
+  return 'consumer';
+}
+
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
@@ -55,7 +65,7 @@ interface AuthContextType {
     email: string;
     password: string;
     name: string;
-    role: 'farmer' | 'fisherman' | 'buyer' | 'admin';
+    role: 'producer' | 'consumer' | 'admin';
     phoneNumber?: string;
     location?: {
       address: string;
@@ -102,8 +112,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // Normalize legacy roles on restore
+        if (parsedUser && parsedUser.role) {
+          parsedUser.role = normalizeRole(parsedUser.role);
+        }
+        setUser(parsedUser);
+      } catch {
+        setUser(null);
+      }
     }
     setIsLoading(false);
   }, []);
@@ -135,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const basicProfile = {
             name: firebaseUser.displayName || 'User',
             email: firebaseUser.email,
-            role: 'farmer', // Default role
+            role: 'producer', // Default role
             phoneNumber: '',
             verificationStatus: {
               isVerified: false,
@@ -166,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
         name: (userProfile as any)?.name || firebaseUser.displayName || '',
-        role: (firebaseUser.email === 'zacharythanos@gmail.com') ? 'admin' : ((userProfile as any)?.role || 'buyer'),
+        role: normalizeRole((firebaseUser.email === 'zacharythanos@gmail.com') ? 'admin' : (userProfile as any)?.role || 'consumer'),
         profileImage: (userProfile as any)?.profileImage || '',
         phoneNumber: (userProfile as any)?.phoneNumber || '',
         location: (userProfile as any)?.location || undefined,
@@ -218,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string;
     password: string;
     name: string;
-    role: 'farmer' | 'fisherman' | 'buyer' | 'admin';
+    role: 'producer' | 'consumer' | 'admin';
     phoneNumber?: string;
     location?: {
       address: string;

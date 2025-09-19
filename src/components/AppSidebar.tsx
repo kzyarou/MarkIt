@@ -4,7 +4,6 @@ import {
   Home, 
   Search, 
   Plus, 
-  Bell, 
   User, 
   LogOut,
   Settings,
@@ -42,23 +41,19 @@ function useNavItems() {
     { id: "search", label: t('nav_search') || "Search", icon: Search, path: "/search" },
     { id: "create", label: t('nav_create') || "Create", icon: Plus, path: "/create-harvest" },
     { id: "messages", label: t('nav_messages') || "Messages", icon: MessageCircle, path: "/messages" },
-    { id: "notifications", label: t('nav_notifications') || "Notifications", icon: Bell, path: "/notifications" },
     { id: "profile", label: t('nav_profile') || "Profile", icon: User, path: "/profile" },
   ]
 
   // Add role-specific items
   if (user?.role === "farmer" || user?.role === "fisherman") {
     coreItems.splice(2, 0, { id: "mydashboard", label: t('nav_mydashboard') || "My Dashboard", icon: FileText, path: "/mydashboard" })
-    coreItems.splice(5, 0, { id: "farmers", label: t('nav_farmers') || "Farmers", icon: Search, path: "/farmers" })
   } else if (user?.role === "buyer") {
     // Buyers don't need dashboard or create - they only have search and messages
     coreItems = [
       { id: "home", label: t('nav_home') || "Home", icon: Home, path: "/" },
       { id: "search", label: t('nav_search') || "Search", icon: Search, path: "/search" },
       { id: "messages", label: t('nav_messages') || "Messages", icon: MessageCircle, path: "/messages" },
-      { id: "notifications", label: t('nav_notifications') || "Notifications", icon: Bell, path: "/notifications" },
       { id: "profile", label: t('nav_profile') || "Profile", icon: User, path: "/profile" },
-      { id: "farmers", label: t('nav_farmers') || "Farmers", icon: Search, path: "/farmers" },
     ]
   } else if (user?.role === "admin") {
     coreItems = [
@@ -74,13 +69,6 @@ function SidebarNav() {
   const items = useNavItems()
   const location = useLocation()
   const navigate = useNavigate()
-  const [unreadCount, setUnreadCount] = React.useState(0)
-
-  // Mock unread count - in a real app, this would come from Firebase
-  React.useEffect(() => {
-    // Simulate unread notifications count
-    setUnreadCount(3) // This would be fetched from your notifications service
-  }, [])
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -122,14 +110,7 @@ function SidebarNav() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className="relative">
-                  <Icon className={`h-6 w-6 ${active ? 'text-green-600' : 'text-gray-500'}`} />
-                  {item.id === 'notifications' && unreadCount > 0 && (
-                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </div>
-                  )}
-                </div>
+                <Icon className={`h-6 w-6 ${active ? 'text-green-600' : 'text-gray-500'}`} />
                 <span className="text-sm">{item.label}</span>
               </motion.button>
             )

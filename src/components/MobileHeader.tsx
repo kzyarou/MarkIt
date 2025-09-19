@@ -13,9 +13,7 @@ export function MobileHeader() {
 
   // Base menu items for all users
   const menuItems = [
-    { label: t('nav_notifications') || 'Notifications', href: '/notifications' },
-    { label: t('menu_farmers_directory') || 'Farmers Directory', href: '/farmers' },
-    { label: t('menu_price_guarantee') || 'Price Guarantee', href: '/price-guarantee' },
+    // Removed Price Guarantee per request
     { label: 'FAQ', href: '/faq' },
     { label: t('menu_help') || 'Help', href: '/help' },
     { label: t('privacy_policy') || 'Privacy Policy', href: '/privacy' },

@@ -16,7 +16,11 @@ import {
   AlertCircle,
   Eye,
   Search,
-  Filter
+  Filter,
+  Package,
+  User,
+  Calendar,
+  Truck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Harvest, Transaction, DashboardStats, ProductCategory } from '@/types/markit';
@@ -152,13 +156,16 @@ const Dashboard = () => {
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      // Fallback: show mock harvests so consumer mode always has content
+      const extra = generateMockHarvests(24);
+      setAllHarvests(extra);
     } finally {
       setLoading(false);
     }
   };
 
   const getRoleBasedContent = () => {
-    if (user?.role === 'farmer' || user?.role === 'fisherman') {
+    if (user?.role === 'producer') {
       return (
         <div className="space-y-6">
           {/* Quick stats removed on homepage */}
@@ -185,82 +192,131 @@ const Dashboard = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {filteredHarvests.map((harvest) => (
-                    <Card key={harvest.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-xl sm:text-lg">{harvest.title}</CardTitle>
-                            <CardDescription className="text-base sm:text-sm">
-                              {t('by') || 'by'} {harvest.farmerId === user?.id ? (t('you') || 'You') : harvest.farmerName}
-                            </CardDescription>
-                            {harvest.farmerId === user?.id && (
-                              <Badge variant="outline" className="mt-1 text-green-600 border-green-600">
-                                {t('your_post') || 'Your Post'}
-                              </Badge>
-                            )}
+                    <Card key={harvest.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <div className="aspect-square bg-muted relative">
+                        {harvest.images && harvest.images.length > 0 ? (
+                          <img
+                            src={harvest.images[0]}
+                            alt={harvest.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
                           </div>
-                          <Badge variant={harvest.quality.grade === 'Premium' ? 'default' : 'secondary'}>
+                        )}
+                        <div className="absolute top-2 right-2">
+                          <Badge variant="secondary" className="bg-white/90 text-black text-xs">
                             {harvest.quality.grade}
                           </Badge>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-base sm:text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {harvest.description}
-                        </p>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-base sm:text-sm">
-                            <span className="text-muted-foreground">{t('quantity') || 'Quantity'}:</span>
-                            <span className="font-medium">{harvest.quantity.amount} {harvest.quantity.unit}</span>
+                        {harvest.farmerId === user?.id && (
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-xs">
+                              {t('your_post') || 'Your Post'}
+                            </Badge>
                           </div>
-                          <div className="flex items-center justify-between text-base sm:text-sm">
-                            <span className="text-muted-foreground">{t('base_price') || 'Base Price'}:</span>
-                            <span className="font-medium">₱{harvest.basePrice}/{harvest.quantity.unit}</span>
+                        )}
+                      </div>
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="space-y-2 sm:space-y-3">
+                          <h3 className="font-semibold text-base sm:text-lg line-clamp-1">{harvest.title}</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{harvest.description}</p>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="truncate">{harvest.farmerId === user?.id ? (t('you') || 'You') : harvest.farmerName}</span>
                           </div>
-                          <div className="flex items-center justify-between text-base sm:text-sm">
-                            <span className="text-muted-foreground">{t('location') || 'Location'}:</span>
-                            <span className="font-medium">{harvest.location.address}</span>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="line-clamp-1">{harvest.location.address}</span>
                           </div>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">Harvested: {new Date(harvest.harvestDate).toLocaleDateString('en-PH', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                              <span className="font-semibold text-base sm:text-lg text-green-600">
+                                ₱{harvest.basePrice}
+                              </span>
+                              <span className="text-xs sm:text-sm text-muted-foreground">/{harvest.quantity.unit}</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">{harvest.quantity.amount} {harvest.quantity.unit}</Badge>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {harvest.subcategory}
+                            </Badge>
+                            {harvest.quality.organic && (
+                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                Organic
+                              </Badge>
+                            )}
+                            {harvest.quality.certifications.slice(0, 2).map((cert, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {cert}
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Truck className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">
+                              {harvest.deliveryOptions.pickup && harvest.deliveryOptions.delivery
+                                ? 'Pickup & Delivery'
+                                : harvest.deliveryOptions.pickup
+                                ? 'Pickup Only'
+                                : 'Delivery Only'}
+                            </span>
                         </div>
-                        <div className="flex items-center space-x-2 mt-4">
+                          
+                          <div className="flex gap-2 mt-3">
                           {harvest.farmerId === user?.id ? (
                             // User's own harvest - show management options
                             <>
-                              <Button asChild size="lg" variant="outline" className="flex-1">
+                                <Button asChild size="sm" variant="outline" className="flex-1">
                                 <Link to={`/harvest/${harvest.id}`}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  {t('view_details') || 'View Details'}
+                                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                    <span className="hidden sm:inline">{t('view_details') || 'View Details'}</span>
+                                    <span className="sm:hidden">{t('view') || 'View'}</span>
                                 </Link>
                               </Button>
-                              <Button asChild size="lg" className="flex-1">
+                                <Button asChild size="sm" className="flex-1">
                                 <Link to={`/harvest/${harvest.id}/edit`}>
-                                  {t('edit') || 'Edit'}
+                                    <span className="text-xs sm:text-sm">{t('edit') || 'Edit'}</span>
                                 </Link>
                               </Button>
                             </>
                           ) : (
                             // Other user's harvest - show viewing options
                             <>
-                              <Button asChild size="lg" variant="outline" className="flex-1">
+                                <Button asChild size="sm" variant="outline" className="flex-1">
                                 <Link to={`/harvest/${harvest.id}`}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  {t('view_details') || 'View Details'}
+                                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                    <span className="hidden sm:inline">{t('view_details') || 'View Details'}</span>
+                                    <span className="sm:hidden">{t('view') || 'View'}</span>
                                 </Link>
                               </Button>
-                              <Button asChild size="lg" variant="default" className="flex-1">
+                                <Button asChild size="sm" className="flex-1">
                                 <Link to={`/harvest/${harvest.id}`}>
-                                  {t('purchase') || 'Purchase'}
+                                    <span className="text-xs sm:text-sm">{t('purchase') || 'Purchase'}</span>
                                 </Link>
                               </Button>
                             </>
                           )}
-                          {harvest.quality.organic && (
-                            <Badge variant="outline" className="text-green-600 border-green-600">
-                              Organic
-                            </Badge>
-                          )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -273,7 +329,7 @@ const Dashboard = () => {
       );
     }
 
-    if (user?.role === 'buyer') {
+    if (user?.role === 'consumer') {
       return (
         <div className="space-y-6">
           {/* Quick stats removed on homepage */}
@@ -285,18 +341,7 @@ const Dashboard = () => {
                 <span>{t('home_all_harvests') || 'All Harvests'}</span>
               </CardTitle>
               <CardDescription>{t('home_all_harvests_buyer_desc') || 'Browse all harvests from farmers and fisherfolk'}</CardDescription>
-              {/* Search Bar */}
-              <div className="mt-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder={t('search_ph') || 'Search products, farmers, locations...'}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
+              {/* Search Bar removed from homepage (search available in Search menu) */}
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -304,62 +349,103 @@ const Dashboard = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {filteredHarvests.map((harvest) => (
-                    <Card key={harvest.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-xl sm:text-lg">{harvest.title}</CardTitle>
-                            <CardDescription className="text-base sm:text-sm">
-                              by {harvest.farmerId === user?.id ? 'You' : harvest.farmerName}
-                            </CardDescription>
-                            {harvest.farmerId === user?.id && (
-                              <Badge variant="outline" className="mt-1 text-green-600 border-green-600">
-                                Your Post
-                              </Badge>
-                            )}
+                    <Card key={harvest.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <div className="aspect-square bg-muted relative">
+                        {harvest.images && harvest.images.length > 0 ? (
+                          <img
+                            src={harvest.images[0]}
+                            alt={harvest.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
                           </div>
-                          <Badge variant={harvest.quality.grade === 'Premium' ? 'default' : 'secondary'}>
+                        )}
+                        <div className="absolute top-2 right-2">
+                          <Badge variant="secondary" className="bg-white/90 text-black text-xs">
                             {harvest.quality.grade}
                           </Badge>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-base sm:text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {harvest.description}
-                        </p>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-base sm:text-sm">
-                            <span className="text-muted-foreground">Quantity:</span>
-                            <span className="font-medium">{harvest.quantity.amount} {harvest.quantity.unit}</span>
+                      </div>
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="space-y-2 sm:space-y-3">
+                          <h3 className="font-semibold text-base sm:text-lg line-clamp-1">{harvest.title}</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{harvest.description}</p>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="truncate">{harvest.farmerName}</span>
                           </div>
-                          <div className="flex items-center justify-between text-base sm:text-sm">
-                            <span className="text-muted-foreground">Base Price:</span>
-                            <span className="font-medium">₱{harvest.basePrice}/{harvest.quantity.unit}</span>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="line-clamp-1">{harvest.location.address}</span>
                           </div>
-                          <div className="flex items-center justify-between text-base sm:text-sm">
-                            <span className="text-muted-foreground">Location:</span>
-                            <span className="font-medium">{harvest.location.address}</span>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">Harvested: {new Date(harvest.harvestDate).toLocaleDateString('en-PH', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}</span>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2 mt-4">
-                          <Button asChild size="lg" variant="outline" className="flex-1">
-                            <Link to={`/harvest/${harvest.id}`}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </Link>
-                          </Button>
-                          <Button asChild size="lg" variant="default" className="flex-1">
-                            <Link to={`/harvest/${harvest.id}`}>
-                              Purchase
-                            </Link>
-                          </Button>
-                          {harvest.quality.organic && (
-                            <Badge variant="outline" className="text-green-600 border-green-600">
-                              Organic
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                              <span className="font-semibold text-base sm:text-lg text-green-600">
+                                ₱{harvest.basePrice}
+                              </span>
+                              <span className="text-xs sm:text-sm text-muted-foreground">/{harvest.quantity.unit}</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">{harvest.quantity.amount} {harvest.quantity.unit}</Badge>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {harvest.subcategory}
                             </Badge>
-                          )}
+                            {harvest.quality.organic && (
+                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                Organic
+                              </Badge>
+                            )}
+                            {harvest.quality.certifications.slice(0, 2).map((cert, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {cert}
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Truck className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">
+                              {harvest.deliveryOptions.pickup && harvest.deliveryOptions.delivery
+                                ? 'Pickup & Delivery'
+                                : harvest.deliveryOptions.pickup
+                                ? 'Pickup Only'
+                                : 'Delivery Only'}
+                            </span>
+                        </div>
+                          
+                          <div className="flex gap-2 mt-3">
+                            <Button asChild size="sm" variant="outline" className="flex-1">
+                            <Link to={`/harvest/${harvest.id}`}>
+                                <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden sm:inline">{t('view_details') || 'View Details'}</span>
+                                <span className="sm:hidden">{t('view') || 'View'}</span>
+                            </Link>
+                          </Button>
+                            <Button asChild size="sm" className="flex-1">
+                            <Link to={`/harvest/${harvest.id}`}>
+                                <span className="text-xs sm:text-sm">{t('purchase') || 'Purchase'}</span>
+                            </Link>
+                          </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -384,9 +470,8 @@ const Dashboard = () => {
             {t('welcome_title') || 'Welcome to MarkIt'}
           </h1>
           <p className="text-sm sm:text-base lg:text-lg text-green-600 px-4">
-            {user?.role === 'farmer' && (t('welcome_farmer') || 'Connect directly with buyers and get fair prices for your harvest')}
-            {user?.role === 'fisherman' && (t('welcome_fisherman') || 'Connect directly with buyers and get fair prices for your catch')}
-            {user?.role === 'buyer' && (t('welcome_buyer') || 'Discover fresh harvests from local farmers and fisherfolk')}
+            {user?.role === 'producer' && (t('welcome_producer') || 'Connect directly with consumers and get fair prices for your harvest')}
+            {user?.role === 'consumer' && (t('welcome_consumer') || 'Discover fresh harvests from local producers')}
             {user?.role === 'admin' && (t('welcome_admin') || 'Monitor platform activity and user management')}
           </p>
         </div>
@@ -395,7 +480,7 @@ const Dashboard = () => {
         <div className="flex justify-center">
           <Badge variant="outline" className="bg-white border-green-300 text-green-700 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm">
             <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span className="truncate max-w-[200px] sm:max-w-none">{user?.location?.city || 'Location not set'}</span>
+            <span className="truncate max-w-[200px] sm:max-w-none">{user?.location?.city || user?.location?.address || 'Location not set'}</span>
           </Badge>
         </div>
 

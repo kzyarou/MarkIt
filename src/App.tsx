@@ -35,12 +35,10 @@ import FAQPage from './pages/FAQPage';
 import DataPrivacyPage from './pages/DataPrivacyPage';
 import TermsPage from './pages/TermsPage';
 import HelpPage from './pages/HelpPage';
-import FarmersDirectoryPage from './pages/FarmersDirectoryPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PriceCalculatorPage from './pages/PriceCalculatorPage';
 import AdminPage from './pages/AdminPage';
-import NotificationsPage from './pages/NotificationsPage';
 import MessagesPage from './pages/MessagesPage';
 
 import { getSections } from '@/services/gradesService';
@@ -115,7 +113,7 @@ function AppRoutes() {
           {user?.role === 'admin' ? (
             <Navigate to="/admin" replace />
           ) : (
-            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+            <RoleProtectedRoute allowedRoles={['producer', 'consumer']}>
               <Dashboard />
             </RoleProtectedRoute>
           )}
@@ -126,7 +124,7 @@ function AppRoutes() {
           {user?.role === 'admin' ? (
             <Navigate to="/admin" replace />
           ) : (
-            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+            <RoleProtectedRoute allowedRoles={['producer', 'consumer']}>
               <MyDashboard />
             </RoleProtectedRoute>
           )}
@@ -137,7 +135,7 @@ function AppRoutes() {
           {user?.role === 'admin' ? (
             <Navigate to="/admin" replace />
           ) : (
-            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman']}>
+            <RoleProtectedRoute allowedRoles={['producer']}>
               {(user?.membershipStatus?.tier === 'temporary') ? (
                 <Navigate to="/profile" replace />
               ) : (
@@ -148,22 +146,22 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/harvest/:harvestId" element={
-        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+        <RoleProtectedRoute allowedRoles={['producer', 'consumer']}>
           <HarvestDetailsPage />
         </RoleProtectedRoute>
       } />
       <Route path="/harvest/:harvestId/edit" element={
-        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman']}>
+        <RoleProtectedRoute allowedRoles={['producer']}>
           <EditHarvest />
         </RoleProtectedRoute>
       } />
       <Route path="/my-harvests" element={
-        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman']}>
+        <RoleProtectedRoute allowedRoles={['producer']}>
           <MyHarvestsPage />
         </RoleProtectedRoute>
       } />
       <Route path="/marketplace" element={
-        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+        <RoleProtectedRoute allowedRoles={['producer', 'consumer']}>
           <MarketplacePage />
         </RoleProtectedRoute>
       } />
@@ -172,19 +170,19 @@ function AppRoutes() {
           {user?.role === 'admin' ? (
             <Navigate to="/admin" replace />
           ) : (
-            <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+            <RoleProtectedRoute allowedRoles={['producer', 'consumer']}>
               <TransactionsPage />
             </RoleProtectedRoute>
           )}
         </ProtectedRoute>
       } />
       <Route path="/price-guarantee" element={
-        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+        <RoleProtectedRoute allowedRoles={['producer', 'consumer']}>
           <PriceGuaranteePage />
         </RoleProtectedRoute>
       } />
       <Route path="/price-guarantee/:category/:subcategory" element={
-        <RoleProtectedRoute allowedRoles={['farmer', 'fisherman', 'buyer']}>
+        <RoleProtectedRoute allowedRoles={['producer', 'consumer']}>
           <PriceGuaranteeDetailPage />
         </RoleProtectedRoute>
       } />
@@ -193,8 +191,8 @@ function AppRoutes() {
           {user?.role === 'admin' ? <AdminPage /> : <Navigate to="/" replace />}
         </ProtectedRoute>
       } />
-      {/* Add price calculator route for farmers/fishermen */}
-      {(user?.role === 'farmer' || user?.role === 'fisherman') && (
+      {/* Add price calculator route for producers */}
+      {(user?.role === 'producer') && (
         <Route path="/price-calculator" element={
           <ProtectedRoute>
             <PriceCalculatorPage />
@@ -204,11 +202,6 @@ function AppRoutes() {
       <Route path="/search" element={
         <ProtectedRoute>
           <SearchPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/notifications" element={
-        <ProtectedRoute>
-          <NotificationsPage />
         </ProtectedRoute>
       } />
       <Route path="/messages" element={
@@ -235,11 +228,6 @@ function AppRoutes() {
       <Route path="/privacy" element={<DataPrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/help" element={<HelpPage />} />
-      <Route path="/farmers" element={
-        <ProtectedRoute>
-          <FarmersDirectoryPage />
-        </ProtectedRoute>
-      } />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       <Route path="*" element={<NotFound />} />

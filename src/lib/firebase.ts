@@ -10,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAor6k_CI8pDFW9QDEqBxW-pnhwHIZvp8U",
   authDomain: "markit-e4ade.firebaseapp.com",
   projectId: "markit-e4ade",
-  storageBucket: "markit-e4ade.firebasestorage.app",
+  storageBucket: "markit-e4ade.appspot.com",
   messagingSenderId: "227077432850",
   appId: "1:227077432850:web:85b41f036565781c6c9acb",
   measurementId: "G-6ZV8HJF2DR"

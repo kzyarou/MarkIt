@@ -1,24 +1,36 @@
 # MarkIt
 
-Direct marketplace connecting farmers and fisherfolk with buyers. The current MVP lets producers post harvests and buyers browse listings, with role-based access, Firebase auth, and PWA/mobile builds. A price‑guarantee and bidding flow is planned and partially scaffolded but not yet fully live.
+Direct marketplace connecting farmers and fisherfolk with buyers. A modern PWA that lets producers post harvests and consumers browse listings with real-time pricing, messaging, and mobile-optimized experience.
 
-## 🌾 What’s in this app today
+## 🌾 What's in this app today
 
-- **Auth and roles**: Email/password auth with roles `farmer`, `fisherman`, `buyer`, and `admin` (see `src/contexts/AuthContext.tsx`).
-- **Harvest CRUD**:
+- **Auth and roles**: Email/password auth with roles `Producer`, `Consumer`, and `admin` (see `src/contexts/AuthContext.tsx`).
+- **Harvest Management**:
   - Create harvests with details: category, quantity, grade/freshness, certifications, base price, dates, location, delivery options (see `src/pages/CreateHarvest.tsx`).
   - Edit or delete existing harvests (see `src/pages/EditHarvest.tsx`).
   - Data is stored in Firestore in a `harvests` collection.
-- **Marketplace browsing**: Buyers can filter and view harvest listings (see `src/pages/MarketplacePage.tsx` and dashboard routes in `src/App.tsx`).
-- **Role protection**: Routes gated by allowed roles via `RoleProtectedRoute`.
-- **PWA + updates**: Service worker registration with update banners/notifications (`src/components/UpdateNotification.tsx`, `src/services/updateService.ts`).
-- **Mobile builds**: Capacitor Android/iOS projects included. CodePush hooks exist for OTA updates.
+- **Product Search & Discovery**: 
+  - Advanced search functionality with real-time pricing analytics
+  - Filter by price range and sort by lowest/highest prices
+  - Mobile-optimized search interface
+- **Real-time Messaging**: 
+  - Direct communication between producers and consumers
+  - Message persistence and real-time updates
+  - Mobile-friendly chat interface
+- **Role-based Dashboard**: 
+  - Producer dashboard for managing harvests and viewing analytics
+  - Consumer dashboard for browsing products and managing purchases
+- **Mobile-First Design**: 
+  - Responsive PWA with mobile navigation
+  - Bottom navigation for easy mobile access
+  - Touch-optimized interface
+- **PWA + Updates**: Service worker registration with update banners (`src/components/UpdateNotification.tsx`, `src/services/updateService.ts`).
+- **Mobile Builds**: Capacitor Android/iOS projects with signed APK generation.
 
-## 🧭 What’s planned or partial
-
-- **Bidding and price guarantee**: UI hooks and navigation exist (e.g., “Place Bid” buttons), but the full bid placement, acceptance, and settlement flow is not finished.
+## 🧭 What's planned or partial
 - **Transactions and payments**: Data types exist; no payment gateway is integrated yet.
 - **Internationalization**: `LanguageContext` exists; full i18n and multi‑currency display are not complete.
+- **Price Guarantee**: UI components exist but full implementation is pending.
 
 ## 🛠️ Tech stack
 
@@ -86,10 +98,18 @@ npm run build:android:signed
 - PWA auto‑updates via service worker; users may see an in‑app update prompt.
 - Optional OTA (CodePush) scaffolding exists; add deployment keys in `capacitor.config.ts` if you enable it.
 
+## 📱 Mobile App
+
+The app is available as a signed APK for Android devices. The APK is generated using Capacitor and includes all the latest features:
+
+- **Download**: `MarkIt-app-release.apk` (2.7MB)
+- **Features**: Full PWA functionality with native mobile optimizations
+- **Requirements**: Android 5.0+ (API level 21+)
+
 ## ⚠️ Known limitations (MVP)
-- Bidding/price‑guarantee flow is not fully implemented.
+- Price guarantee flow is not fully implemented.
 - No payment gateway yet; transaction types are present but non‑functional.
-- Some labels/configs may still use earlier cache naming.
+- Some legacy role references may exist in older cached data.
 
 ## 🤝 Contributing
 PRs welcome. Please open an issue describing the change before large contributions.

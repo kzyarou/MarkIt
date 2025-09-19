@@ -290,11 +290,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 )}
               </div>
               {editable && (
-                <div className="pt-2">
-                  <Button variant="outline" size="sm" onClick={handleAvatarClick}>
-                    Upload new document via Profile Photo button (BIR or Barangay)
-                  </Button>
-                </div>
+              <div className="pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAvatarClick}
+                  className="w-full sm:w-auto whitespace-normal leading-tight text-left"
+                >
+                  <span className="sm:hidden">Upload document via photo</span>
+                  <span className="hidden sm:inline">Upload new document via Profile Photo button (BIR or Barangay)</span>
+                </Button>
+              </div>
               )}
             </div>
           </CardContent>

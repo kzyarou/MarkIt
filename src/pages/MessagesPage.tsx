@@ -30,6 +30,7 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBottomNav } from '@/hooks/use-mobile';
 
 interface Message {
   id: string;
@@ -57,6 +58,7 @@ interface Conversation {
 const MessagesPage = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { bottomNavClass } = useBottomNav();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -66,6 +68,20 @@ const MessagesPage = () => {
   const [userData, setUserData] = useState<{ [userId: string]: { name: string; avatar?: string } }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [messageUnsubscribe, setMessageUnsubscribe] = useState<(() => void) | null>(null);
+
+  // Load cached conversations and userData first for instant UI, then attach realtime listener
+  useEffect(() => {
+    try {
+      const cachedConvs = localStorage.getItem('markit:conversations');
+      const cachedUsers = localStorage.getItem('markit:conversationUsers');
+      if (cachedConvs) {
+        setConversations(JSON.parse(cachedConvs));
+      }
+      if (cachedUsers) {
+        setUserData(JSON.parse(cachedUsers));
+      }
+    } catch {}
+  }, []);
 
   // Load conversations from Firestore
   useEffect(() => {
@@ -80,8 +96,7 @@ const MessagesPage = () => {
         const q = query(
           conversationsRef,
           where('participants', 'array-contains', user.id),
-          orderBy('lastActivity', 'desc'),
-          limit(20) // Only load last 20 conversations for efficiency
+          limit(50) // Avoid composite index by sorting client-side
         );
 
         unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -121,8 +136,20 @@ const MessagesPage = () => {
           const combinedUserData = userDataResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
           
           console.log('Loaded user data:', combinedUserData);
-          setUserData(combinedUserData);
+          setUserData(prev => {
+            const next = { ...prev, ...combinedUserData };
+            try { localStorage.setItem('markit:conversationUsers', JSON.stringify(next)); } catch {}
+            return next;
+          });
+
+          // Sort client-side by lastActivity desc
+          conversationsData.sort((a, b) => {
+            const ta = (a.lastActivity && a.lastActivity.toDate) ? a.lastActivity.toDate().getTime() : 0;
+            const tb = (b.lastActivity && b.lastActivity.toDate) ? b.lastActivity.toDate().getTime() : 0;
+            return tb - ta;
+          });
           setConversations(conversationsData);
+          try { localStorage.setItem('markit:conversations', JSON.stringify(conversationsData)); } catch {}
         });
       } catch (error) {
         console.error('Error loading conversations:', error);
@@ -334,7 +361,7 @@ const MessagesPage = () => {
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-7xl">
+    <div className={`container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-7xl ${bottomNavClass}`}>
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)]">
         {/* Conversations List */}
         <div className={`w-full ${selectedConversation ? 'hidden lg:block lg:w-1/3' : 'block'}`}>
@@ -495,7 +522,7 @@ const MessagesPage = () => {
               </CardHeader>
 
               {/* Messages */}
-              <CardContent className="flex-1 p-4 overflow-y-auto">
+              <CardContent className="flex-1 p-4 overflow-y-auto pb-28 sm:pb-4">
                 {isLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -574,8 +601,8 @@ const MessagesPage = () => {
                 )}
               </CardContent>
 
-              {/* Message Input */}
-              <div className="p-3 sm:p-4 border-t">
+              {/* Message Input - fixed above bottom nav on mobile */}
+              <div className="p-3 sm:p-4 border-t bg-white fixed left-0 right-0 bottom-[96px] z-[60] sm:static">
                 <div className="flex items-center space-x-2">
                   <Button size="sm" variant="outline" className="hidden sm:flex">
                     <Paperclip className="h-4 w-4" />
