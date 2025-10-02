@@ -4,7 +4,7 @@ Direct marketplace connecting farmers and fisherfolk with buyers. A modern PWA t
 
 ## 🌾 What's in this app today
 
-- **Auth and roles**: Email/password auth with roles `Producer`, `Consumer`, and `admin` (see `src/contexts/AuthContext.tsx`).
+- **Auth and roles**: Email/password auth with roles `Producer`, and `Consumer`. (see `src/contexts/AuthContext.tsx`).
 - **Harvest Management**:
   - Create harvests with details: category, quantity, grade/freshness, certifications, base price, dates, location, delivery options (see `src/pages/CreateHarvest.tsx`).
   - Edit or delete existing harvests (see `src/pages/EditHarvest.tsx`).

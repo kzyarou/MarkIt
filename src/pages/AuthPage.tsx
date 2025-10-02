@@ -14,6 +14,7 @@ import { storage, db } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
+import { validateGmail } from '@/utils/emailValidation';
 
 const steps = [
   { id: 1, title: "Personal Information", icon: User },
@@ -104,6 +105,7 @@ export default function AuthPage() {
   const [cardTransition, setCardTransition] = useState('opacity-0 scale-90 pointer-events-none');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [emailError, setEmailError] = useState<string>('');
 
   // Onboarding state
   const [currentStep, setCurrentStep] = useState(1);
@@ -170,7 +172,8 @@ export default function AuthPage() {
   // Validation helpers
   const isValidFullName = signupData.fullName.trim().length > 1;
   const isValidPhone = /^(\+63|0)9\d{9}$/.test(signupData.phoneNumber.replace(/\s/g, ''));
-  const isValidEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(signupData.email.trim());
+  const emailValidation = validateGmail(signupData.email);
+  const isValidEmail = emailValidation.isValid;
   const isValidRegion = signupData.region.trim().length > 0;
   const isValidProvince = signupData.province.trim().length > 0;
   const isValidMunicipality = signupData.municipality.trim().length > 0;
@@ -201,6 +204,7 @@ export default function AuthPage() {
     return value;
   };
 
+  const signupSteps = [
     // Name step
     ({ signupData, setSignupData, progress, isValidName, setSignupStep }) => (
       <>
@@ -391,14 +395,24 @@ export default function AuthPage() {
     ({ signupData, setSignupData, progress, isValidEmail, setSignupStep }) => (
       <>
         <div className="text-3xl sm:text-4xl font-bold mb-10 text-green-900">Let's create your profile</div>
-        <label className="block mb-2 text-green-900 dark:text-white">What's your email?</label>
+        <label className="block mb-2 text-green-900 dark:text-white">What's your Gmail address?</label>
         <input
           type="email"
-          className="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium"
+          className={`border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:border-green-500 transition shadow-sm bg-white text-black placeholder:text-gray-400 text-xl font-medium ${
+            signupData.email && !isValidEmail ? 'border-red-500 focus:ring-red-400' : 'focus:ring-green-400'
+          }`}
           value={signupData.email}
-          onChange={e => setSignupData({ ...signupData, email: e.target.value.trimStart() })}
-          placeholder="Email"
+          onChange={e => {
+            const value = e.target.value.trimStart();
+            setSignupData({ ...signupData, email: value });
+            const validation = validateGmail(value);
+            setEmailError(validation.errorMessage || '');
+          }}
+          placeholder="your.email@gmail.com"
         />
+        {signupData.email && !isValidEmail && (
+          <p className="text-red-500 text-sm mt-1 ml-2">{emailValidation.errorMessage}</p>
+        )}
         <button
           className="mt-8 w-full py-2 rounded-full font-semibold transition relative overflow-hidden text-xl border-2 border-green-500 shadow-lg hover:shadow-xl active:shadow-md active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gradient-to-r from-green-600 to-green-400 text-white"
           disabled={!isValidEmail}
@@ -439,24 +453,31 @@ export default function AuthPage() {
         </button>
       </>
     )
+  ];
 
   // Final signup handler
   const handleFinalSignup = async () => {
+    // Validate Gmail before proceeding
+    const emailValidation = validateGmail(signupData.email);
+    if (!emailValidation.isValid) {
+      setEmailError(emailValidation.errorMessage || 'Please enter a valid Gmail address');
+      toast({ 
+        title: 'Invalid Email', 
+        description: emailValidation.errorMessage || 'Please use a Gmail account to sign up',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // Determine role based on account type and operation type
-      let role: 'farmer' | 'fisherman' | 'buyer' = 'buyer';
+      let role: 'producer' | 'consumer' = 'consumer';
       
       if (signupData.accountType === 'consumer') {
-        role = 'buyer';
+        role = 'consumer';
       } else if (signupData.accountType === 'seller') {
-        if (signupData.operationType === 'farming') {
-          role = 'farmer';
-        } else if (signupData.operationType === 'fishing') {
-          role = 'fisherman';
-        } else if (signupData.operationType === 'both') {
-          role = 'farmer'; // Default to farmer for mixed operations
-        }
+        role = 'producer'; // All sellers are producers regardless of operation type
       }
 
       const payload = {
@@ -483,11 +504,11 @@ export default function AuthPage() {
         } : undefined,
         membershipStatus: signupData.accountType === 'seller'
           ? (signupData.documentType === 'BIR'
-              ? { tier: 'lifetime', documentType: 'BIR' }
+              ? { tier: 'lifetime' as const, documentType: 'BIR' as const }
               : signupData.documentType === 'BarangayClearance'
-                ? { tier: 'temporary', documentType: 'BarangayClearance' }
-                : { tier: 'none' })
-          : { tier: 'none' }
+                ? { tier: 'temporary' as const, documentType: 'BarangayClearance' as const }
+                : { tier: 'none' as const })
+          : { tier: 'none' as const }
       };
 
       const success = await signup(payload);
@@ -665,14 +686,23 @@ export default function AuthPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email">Gmail Address</Label>
                     <Input
                       id="email"
                       type="email"
                       value={signupData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="your.email@example.com"
+                      onChange={(e) => {
+                        const value = e.target.value.trimStart();
+                        handleInputChange('email', value);
+                        const validation = validateGmail(value);
+                        setEmailError(validation.errorMessage || '');
+                      }}
+                      placeholder="your.email@gmail.com"
+                      className={signupData.email && !isValidEmail ? 'border-red-500 focus:ring-red-400' : ''}
                     />
+                    {signupData.email && !isValidEmail && (
+                      <p className="text-red-500 text-sm">{emailValidation.errorMessage}</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -959,6 +989,19 @@ export default function AuthPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate Gmail for login as well
+    const emailValidation = validateGmail(loginData.email);
+    if (!emailValidation.isValid) {
+      setEmailError(emailValidation.errorMessage || 'Please enter a valid Gmail address');
+      toast({ 
+        title: 'Invalid Email', 
+        description: emailValidation.errorMessage || 'Please use a Gmail account to sign in',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const success = await login(loginData.email, loginData.password);
@@ -1058,12 +1101,22 @@ export default function AuthPage() {
                 <form className="flex flex-col gap-4" onSubmit={handleLogin}>
                   <input
                     type="email"
-                    placeholder="Email"
-                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm text-xl font-medium"
+                    placeholder="your.email@gmail.com"
+                    className={`border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:border-green-500 transition shadow-sm text-xl font-medium ${
+                      loginData.email && !validateGmail(loginData.email).isValid ? 'border-red-500 focus:ring-red-400' : 'focus:ring-green-400'
+                    }`}
                     value={loginData.email}
-                    onChange={e => setLoginData({ ...loginData, email: e.target.value.trimStart() })}
+                    onChange={e => {
+                      const value = e.target.value.trimStart();
+                      setLoginData({ ...loginData, email: value });
+                      const validation = validateGmail(value);
+                      setEmailError(validation.errorMessage || '');
+                    }}
                     required
                   />
+                  {loginData.email && !validateGmail(loginData.email).isValid && (
+                    <p className="text-red-500 text-sm mt-1 ml-2">{validateGmail(loginData.email).errorMessage}</p>
+                  )}
                   <div className="relative">
                     <input
                       type={showLoginPassword ? "text" : "password"}
@@ -1095,12 +1148,22 @@ export default function AuthPage() {
                 <form className="flex flex-col gap-4" onSubmit={handleFinalSignup}>
                   <input
                     type="email"
-                    placeholder="Email"
-                    className="border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500 transition shadow-sm text-xl font-medium"
+                    placeholder="your.email@gmail.com"
+                    className={`border rounded-full px-6 py-4 bg-white text-black focus:outline-none focus:ring-2 focus:border-green-500 transition shadow-sm text-xl font-medium ${
+                      signupData.email && !isValidEmail ? 'border-red-500 focus:ring-red-400' : 'focus:ring-green-400'
+                    }`}
                     value={signupData.email}
-                    onChange={e => setSignupData({ ...signupData, email: e.target.value.trimStart() })}
+                    onChange={e => {
+                      const value = e.target.value.trimStart();
+                      setSignupData({ ...signupData, email: value });
+                      const validation = validateGmail(value);
+                      setEmailError(validation.errorMessage || '');
+                    }}
                     required
                   />
+                  {signupData.email && !isValidEmail && (
+                    <p className="text-red-500 text-sm mt-1 ml-2">{emailValidation.errorMessage}</p>
+                  )}
                   <div className="relative">
                     <input
                       type={showSignupPassword ? "text" : "password"}

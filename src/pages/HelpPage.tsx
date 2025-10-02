@@ -14,11 +14,11 @@ export default function HelpPage() {
   const faqData = [
     {
       question: "How do I create a harvest listing?",
-      answer: "To create a harvest listing, go to the 'Create Harvest' section from your dashboard. Fill in the required information including crop type, quantity, price, and location. Add photos of your harvest and set your preferred contact method. Once submitted, your listing will be visible to buyers in the marketplace."
+      answer: "To create a harvest listing, go to the 'Create Harvest' section from your dashboard. Fill in the required information including crop type, quantity, price, and location. Add photos of your harvest and set your preferred contact method. Once submitted, your listing will be visible to consumers in the marketplace."
     },
     {
       question: "How does the price guarantee work?",
-      answer: "MarkIt's price guarantee ensures fair pricing for farmers and fishermen. We provide market-based pricing recommendations and protect against price manipulation. If you encounter unfair pricing practices, report them through our feedback system."
+      answer: "MarkIt's price guarantee ensures fair pricing for producers. We provide market-based pricing recommendations and protect against price manipulation. If you encounter unfair pricing practices, report them through our feedback system."
     },
     {
       question: "How do I contact buyers or sellers?",
@@ -26,7 +26,7 @@ export default function HelpPage() {
     },
     {
       question: "What payment methods are accepted?",
-      answer: "MarkIt supports various payment methods including cash on delivery, bank transfers, and digital payments. Payment terms are negotiated directly between buyers and sellers through our messaging system."
+      answer: "MarkIt supports various payment methods including cash on delivery, bank transfers, and digital payments. Payment terms are negotiated directly between consumers and producers through our messaging system."
     },
     {
       question: "How do I update my profile information?",
@@ -97,7 +97,7 @@ export default function HelpPage() {
                 <Clock className="w-5 h-5 text-primary" />
                 <div>
                   <p className="font-medium">Support Hours</p>
-                  <p className="text-sm text-muted-foreground">Sat: 1:00PM</p>
+                  <p className="text-sm text-muted-foreground">Sat: 1:00PM+</p>
                 </div>
               </div>
             </div>
@@ -213,17 +213,17 @@ export default function HelpPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                <h4 className="font-medium text-green-800 mb-2">For Sellers (Farmers & Fishermen)</h4>
+                <h4 className="font-medium text-green-800 mb-2">For Producers</h4>
                 <ul className="text-sm text-green-700 space-y-1">
                   <li>• Take clear, high-quality photos of your harvest</li>
                   <li>• Provide accurate quantity and quality descriptions</li>
                   <li>• Set competitive prices based on market rates</li>
-                  <li>• Respond promptly to buyer inquiries</li>
+                  <li>• Respond promptly to consumer inquiries</li>
                   <li>• Maintain good communication throughout the transaction</li>
                 </ul>
               </div>
               <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                <h4 className="font-medium text-blue-800 mb-2">For Buyers</h4>
+                <h4 className="font-medium text-blue-800 mb-2">For Consumers</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>• Check seller profiles and ratings before purchasing</li>
                   <li>• Ask questions about quality and delivery terms</li>

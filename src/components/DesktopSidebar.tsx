@@ -1,6 +1,6 @@
 import React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Users, FileText, Search, User, Settings, Calculator } from "lucide-react"
+import { Home, LayoutDashboard, Search, User, Settings, Calculator } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -17,8 +17,8 @@ import {
 
 function useNavItems(role?: string | null) {
   const base = [
-    { id: "homepage", label: "Homepage", icon: Users, path: "/" },
-    { id: "mydashboard", label: "MyDashboard", icon: FileText, path: "/mydashboard" },
+    { id: "homepage", label: "Homepage", icon: Home, path: "/" },
+    { id: "mydashboard", label: "MyDashboard", icon: LayoutDashboard, path: "/mydashboard" },
     { id: "search", label: "Search", icon: Search, path: "/search" },
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
     { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
@@ -26,8 +26,8 @@ function useNavItems(role?: string | null) {
 
   if (role === "student") {
     return [
-      { id: "homepage", label: "Homepage", icon: Users, path: "/" },
-      { id: "mydashboard", label: "MyDashboard", icon: FileText, path: "/mydashboard" },
+      { id: "homepage", label: "Homepage", icon: Home, path: "/" },
+      { id: "mydashboard", label: "MyDashboard", icon: LayoutDashboard, path: "/mydashboard" },
       { id: "calculator", label: "Calculator", icon: Calculator, path: "/calculator" },
       { id: "profile", label: "Profile", icon: User, path: "/profile" },
       { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
@@ -36,7 +36,7 @@ function useNavItems(role?: string | null) {
 
   if (role === 'buyer') {
     return [
-      { id: "homepage", label: "Homepage", icon: Users, path: "/" },
+      { id: "homepage", label: "Homepage", icon: Home, path: "/" },
       { id: "search", label: "Search", icon: Search, path: "/search" },
       { id: "profile", label: "Profile", icon: User, path: "/profile" },
       { id: "settings", label: "Settings", icon: Settings, path: "/settings" },

@@ -222,8 +222,6 @@ export interface DashboardStats {
   totalHarvests: number;
   activeHarvests: number;
   totalTransactions: number;
-  totalEarnings: number;
-  averageRating: number;
   recentActivity: {
     type: string;
     description: string;

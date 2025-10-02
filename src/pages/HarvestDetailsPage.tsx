@@ -27,6 +27,7 @@ import { Harvest } from '@/types/markit';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ConversationService } from '@/services/conversationService';
+import { addToHistory, isSaved, toggleSaved } from '@/utils/userContent';
 
 const HarvestDetailsPage = () => {
   const { harvestId } = useParams();
@@ -36,6 +37,7 @@ const HarvestDetailsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [isStartingConversation, setIsStartingConversation] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (harvestId) {
@@ -59,6 +61,22 @@ const HarvestDetailsPage = () => {
       const harvestData = harvestDoc.data() as Harvest;
       const harvestWithId = { ...harvestData, id: harvestDoc.id };
       setHarvest(harvestWithId);
+      // Track view in browsing history and initialize saved state
+      try {
+        addToHistory(user?.id, {
+          id: harvestWithId.id,
+          title: harvestWithId.title,
+          subcategory: harvestWithId.subcategory,
+          category: harvestWithId.category,
+          images: harvestWithId.images,
+          basePrice: harvestWithId.basePrice,
+          quantity: harvestWithId.quantity,
+          location: { address: harvestWithId.location.address },
+          quality: harvestWithId.quality,
+          farmerName: harvestWithId.farmerName,
+        });
+        setSaved(isSaved(user?.id, harvestWithId.id));
+      } catch {}
     } catch (error) {
       console.error('Error loading harvest details:', error);
     } finally {
@@ -188,9 +206,28 @@ const HarvestDetailsPage = () => {
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant={saved ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                if (!harvest) return;
+                const nowSaved = toggleSaved(user?.id, {
+                  id: harvest.id,
+                  title: harvest.title,
+                  subcategory: harvest.subcategory,
+                  category: harvest.category,
+                  images: harvest.images,
+                  basePrice: harvest.basePrice,
+                  quantity: harvest.quantity,
+                  location: { address: harvest.location.address },
+                  quality: harvest.quality,
+                  farmerName: harvest.farmerName,
+                });
+                setSaved(nowSaved);
+              }}
+            >
               <Heart className="h-4 w-4 mr-2" />
-              Save
+              {saved ? 'Saved' : 'Save'}
             </Button>
             <Button variant="outline" size="sm">
               <Share2 className="h-4 w-4 mr-2" />
@@ -360,7 +397,7 @@ const HarvestDetailsPage = () => {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {user?.role === 'farmer' || user?.role === 'fisherman' ? (
+            {user?.role === 'producer' ? (
               <div className="space-y-2">
                 <Button 
                   variant="outline" 

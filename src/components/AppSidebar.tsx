@@ -7,7 +7,7 @@ import {
   User, 
   LogOut,
   Settings,
-  FileText,
+  LayoutDashboard,
   Calculator,
   MessageCircle
 } from "lucide-react"
@@ -45,9 +45,9 @@ function useNavItems() {
   ]
 
   // Add role-specific items
-  if (user?.role === "farmer" || user?.role === "fisherman") {
-    coreItems.splice(2, 0, { id: "mydashboard", label: t('nav_mydashboard') || "My Dashboard", icon: FileText, path: "/mydashboard" })
-  } else if (user?.role === "buyer") {
+  if (user?.role === "producer") {
+    coreItems.splice(2, 0, { id: "mydashboard", label: t('nav_mydashboard') || "My Dashboard", icon: LayoutDashboard, path: "/mydashboard" })
+  } else if (user?.role === "consumer") {
     // Buyers don't need dashboard or create - they only have search and messages
     coreItems = [
       { id: "home", label: t('nav_home') || "Home", icon: Home, path: "/" },
@@ -174,9 +174,8 @@ function UserProfile() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{user.name}</p>
             <p className="text-xs text-gray-500 truncate">
-              {user.role === 'farmer' ? (t('role_farmer') || 'Farmer') : 
-               user.role === 'fisherman' ? (t('role_fisherman') || 'Fisherman') : 
-               user.role === 'buyer' ? (t('role_buyer') || 'Buyer') : 
+              {user.role === 'producer' ? (t('role_producer') || 'Producer') : 
+               user.role === 'consumer' ? (t('role_consumer') || 'Consumer') : 
                user.role === 'admin' ? (t('role_admin') || 'Admin') : (t('role_user') || 'User')}
             </p>
           </div>

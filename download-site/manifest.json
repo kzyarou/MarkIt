@@ -1,0 +1,23 @@
+{
+  "name": "MarkIt - Download APK",
+  "short_name": "MarkIt",
+  "description": "Download MarkIt APK - Direct marketplace connecting farmers and fisherfolk with buyers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
+
+
+
+
+
+
+

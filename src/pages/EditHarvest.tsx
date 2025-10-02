@@ -85,11 +85,11 @@ const EditHarvest = () => {
         harvestDate: new Date(harvestWithId.harvestDate),
         expiryDate: harvestWithId.expiryDate ? new Date(harvestWithId.expiryDate) : null,
         location: harvestWithId.location,
-        deliveryOptions: harvestWithId.deliveryOptions || {
-          pickup: true,
-          delivery: false,
-          deliveryRadius: '',
-          deliveryFee: ''
+        deliveryOptions: {
+          pickup: harvestWithId.deliveryOptions?.pickup ?? true,
+          delivery: harvestWithId.deliveryOptions?.delivery ?? false,
+          deliveryRadius: String(harvestWithId.deliveryOptions?.deliveryRadius ?? ''),
+          deliveryFee: String(harvestWithId.deliveryOptions?.deliveryFee ?? '')
         }
       });
     } catch (error) {
@@ -103,13 +103,16 @@ const EditHarvest = () => {
   const handleInputChange = (field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
-        }
-      }));
+      setFormData(prev => {
+        const parentValue = prev[parent as keyof typeof prev] as any;
+        return {
+          ...prev,
+          [parent]: {
+            ...(parentValue && typeof parentValue === 'object' ? parentValue : {}),
+            [child]: value
+          }
+        };
+      });
     } else {
       setFormData(prev => ({
         ...prev,

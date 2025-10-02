@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, FileText, Search, MessageCircle, Plus } from 'lucide-react';
+import { Home, LayoutDashboard, Search, MessageCircle, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,8 +15,8 @@ export function BottomNavigation() {
 
   // Fixed bottom nav for mobile: Home, Dashboard, [Create if producer], Search, Messages
   const navItems = [
-    { id: 'homepage', icon: Users, path: '/', label: t('nav_home') || 'Home' },
-    { id: 'mydashboard', icon: FileText, path: '/mydashboard', label: t('nav_mydashboard') || 'My Dashboard' },
+    { id: 'homepage', icon: Home, path: '/', label: t('nav_home') || 'Home' },
+    { id: 'mydashboard', icon: LayoutDashboard, path: '/mydashboard', label: t('nav_mydashboard') || 'My Dashboard' },
     // Only show create for producers
     ...(user?.role === 'producer' ? [
       { id: 'create', icon: Plus, path: '/create-harvest', label: t('nav_create') || 'Create' },
